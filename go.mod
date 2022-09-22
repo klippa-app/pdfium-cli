@@ -3,7 +3,7 @@ module github.com/klippa-app/pdfium-cli
 go 1.18
 
 require (
-	github.com/klippa-app/go-pdfium v1.2.1
+	github.com/klippa-app/go-pdfium v1.2.2
 	github.com/spf13/cobra v1.5.0
 )
 

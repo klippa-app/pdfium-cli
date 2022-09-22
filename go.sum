@@ -77,8 +77,8 @@ github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLf
 github.com/jhump/protoreflect v1.6.0 h1:h5jfMVslIg6l29nsMs0D8Wj17RDVdNYti0vDN/PZZoE=
 github.com/jhump/protoreflect v1.6.0/go.mod h1:eaTn3RZAmMBcV0fifFvlm6VHNz3wSkYyXYWUh7ymB74=
 github.com/jolestar/go-commons-pool/v2 v2.1.2/go.mod h1:r4NYccrkS5UqP1YQI1COyTZ9UjPJAAGTUxzcsK1kqhY=
-github.com/klippa-app/go-pdfium v1.2.1 h1:E65qh2eoFZyN38kxd+xkivs9DQyhagQ/AX1CbDJK4IE=
-github.com/klippa-app/go-pdfium v1.2.1/go.mod h1:mkBbNZsOl9YMcfMy4HcVlQ8t5+baaGUpF1yOTawHB2g=
+github.com/klippa-app/go-pdfium v1.2.2 h1:ug7ZuSVxSJ8Y7toknJt9cgdRp8A3FFhaDuATe2tCr5w=
+github.com/klippa-app/go-pdfium v1.2.2/go.mod h1:mkBbNZsOl9YMcfMy4HcVlQ8t5+baaGUpF1yOTawHB2g=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=

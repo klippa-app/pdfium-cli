@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/klippa-app/go-pdfium/requests"
-	"github.com/klippa-app/pdfium-cli/pdf"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/klippa-app/pdfium-cli/pdf"
+
+	"github.com/klippa-app/go-pdfium/requests"
+	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -43,10 +45,7 @@ var explodeCmd = &cobra.Command{
 		}
 		defer pdf.ClosePdfium()
 
-		document, err := pdf.PdfiumInstance.OpenDocument(&requests.OpenDocument{
-			FilePath: &args[0],
-		})
-
+		document, err := openFile(args[0])
 		if err != nil {
 			cmd.PrintErrf("could not open input file %s: %w", args[0], err)
 			return
