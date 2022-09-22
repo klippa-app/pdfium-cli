@@ -41,7 +41,7 @@ func init() {
 var renderCmd = &cobra.Command{
 	Use:   "render [input] [output]",
 	Short: "Render a PDF into images",
-	Long:  "Render a PDF into images, the output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. split invoice.pdf invoice-%d.jpg, the result for 2-page PDF will be invoice-1.jpg and invoice-2.jpg.",
+	Long:  "Render a PDF into images, the output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. render invoice.pdf invoice-%d.jpg, the result for a 2-page PDF will be invoice-1.jpg and invoice-2.jpg.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err

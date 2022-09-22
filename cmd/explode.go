@@ -21,7 +21,7 @@ func init() {
 var explodeCmd = &cobra.Command{
 	Use:   "explode [input] [output]",
 	Short: "Explode a PDF into multiple PDFs",
-	Long:  "Explode a PDF into multiple PDFs, the output filename should contain a \"%d\" placeholder for the page number, e.g. split invoice.pdf invoice-%d.pdf, the result for 2-page PDF will be invoice-1.pdf and invoice-2.pdf.",
+	Long:  "Explode a PDF into multiple PDFs, the output filename should contain a \"%d\" placeholder for the page number, e.g. split invoice.pdf invoice-%d.pdf, the result for a 2-page PDF will be invoice-1.pdf and invoice-2.pdf.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err
