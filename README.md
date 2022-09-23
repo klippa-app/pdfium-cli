@@ -16,13 +16,13 @@
 ## PDFium
 
 This project uses the PDFium C++ library by Google (https://pdfium.googlesource.com/pdfium/) to process the PDF
-documents. Therefor this project could also be called a binding.
+documents.
 
 ## Prerequisites
 
-To use this Go library, you will need the actual PDFium library to run it.
+To use this CLI tool, you will need the actual PDFium library to run it.
 
-### Get the library
+### Get the PDFium library
 
 You can try to compile PDFium yourself, but you can also use pre-compiled binaries, for example
 from: https://github.com/bblanchon/pdfium-binaries/releases
