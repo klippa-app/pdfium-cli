@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/klippa-app/go-pdfium"
-	"github.com/klippa-app/go-pdfium/single_threaded"
+	"github.com/klippa-app/go-pdfium/webassembly"
 )
 
 // Be sure to close pools/instances when you're done with them.
@@ -21,10 +21,17 @@ func LoadPdfium() error {
 		return nil
 	}
 
-	// Init the PDFium library and return the instance to open documents.
-	pool = single_threaded.Init(single_threaded.Config{})
-
 	var err error
+	// Init the PDFium library and return the instance to open documents.
+	pool, err = webassembly.Init(webassembly.Config{
+		MinIdle:  1,
+		MaxIdle:  1,
+		MaxTotal: 1,
+	})
+	if err != nil {
+		return err
+	}
+
 	PdfiumInstance, err = pool.GetInstance(time.Second * 30)
 	if err != nil {
 		return err

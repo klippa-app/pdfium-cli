@@ -13,35 +13,12 @@
 * Exploding PDFs into one PDF file per page
 * Rendering PDFs in different formats
 
-## PDFium
+## PDFium & Wazero
 
 This project uses the PDFium C++ library by Google (https://pdfium.googlesource.com/pdfium/) to process the PDF
 documents.
 
-## Prerequisites
-
-To use this CLI tool, you will need the actual PDFium library to run it.
-
-### Get the PDFium library
-
-You can try to compile PDFium yourself, but you can also use pre-compiled binaries, for example
-from: https://github.com/bblanchon/pdfium-binaries/releases
-
-If you use a pre-compiled library, make sure to extract it somewhere logical, for example /opt/pdfium.
-
-### Configure LD_LIBRARY_PATH
-
-Extend your library path by running:
-
-`export LD_LIBRARY_PATH={path}/lib`
-
-Replace `{path}` with the path you extracted/compiled pdfium in.
-
-You can do this globally or just in your editor.
-
-this can globally be done on ubuntu by editing `~/.profile`
-and adding the line in this file. reloading for bash can be done by relogging or running `source ~/.profile` can be used
-to test the change for a terminal
+We use a Webassembly version of PDFium that is compiled with [Emscripten](https://emscripten.org/) and runs in the [Wazero Go](https://github.com/tetratelabs/wazero) runtime.
 
 ## Getting started
 
