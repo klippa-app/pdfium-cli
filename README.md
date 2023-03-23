@@ -12,10 +12,11 @@
 
 * Get information of a PDF
 * Merge multiple PDFs into a single PDF
+* Exploding PDFs into one PDF file per page
+* Rendering PDFs in JPG and PNG
 * Extracting text from PDFs
 * Extracting images from PDFs
-* Exploding PDFs into one PDF file per page
-* Rendering PDFs in different formats
+* Extracting attachments from PDFs
 
 ## PDFium & Wazero
 
