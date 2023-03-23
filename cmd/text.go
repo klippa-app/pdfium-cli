@@ -17,6 +17,7 @@ import (
 var (
 	// Used for flags.
 	outputType                          string
+	textPageHeader                      bool
 	jsonOutputDetails                   string
 	jsonFullCollectFontInformation      bool
 	jsonFullCollectPixelPositionsDPI    int
@@ -29,6 +30,7 @@ func init() {
 	addPagesOption("The pages or page to get text of", textCmd)
 
 	textCmd.Flags().StringVarP(&outputType, "output-type", "", "text", "The file type to output, text or json")
+	textCmd.Flags().BoolVarP(&textPageHeader, "text-page-header", "", true, "Whether to add page headers to the text to indicate the page number.")
 	textCmd.Flags().StringVarP(&jsonOutputDetails, "json-output-details", "", "compact", "The level of details in the output when using JSON as output format, compact or full. compact will only give you the text per page, full will give you coordinates per character and rectangles that have characters together.")
 	textCmd.Flags().BoolVarP(&jsonFullCollectFontInformation, "json-full-collect-font-information", "", false, "Whether to collection font information. Only available in output format json and output details full")
 	textCmd.Flags().IntVarP(&jsonFullCollectPixelPositionsDPI, "json-full-pixel-positions-dpi", "", 0, "DPI you used when rendering to calculate pixels positions. Only available in output format json and output details full")
@@ -149,7 +151,14 @@ var textCmd = &cobra.Command{
 				if outputType == "json" {
 					jsonPageText = append(jsonPageText, pageText)
 				} else {
-					cmd.Printf("Page %d\n%s\n\n", textPages[i].ByIndex.Index+1, pageText.Text)
+					// Inject newline after text block.
+					if i > 0 {
+						cmd.Printf("\n")
+					}
+					if textPageHeader {
+						cmd.Printf("Page %d\n", textPages[i].ByIndex.Index+1)
+					}
+					cmd.Printf("%s\n", pageText.Text)
 				}
 			}
 

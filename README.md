@@ -10,6 +10,9 @@
 
 ## Features
 
+* Get information of a PDF
+* Merge multiple PDFs into a single PDF
+* Extracting text from PDFs
 * Exploding PDFs into one PDF file per page
 * Rendering PDFs in different formats
 
@@ -91,3 +94,5 @@ international team of 50 people, with offices in Groningen, Amsterdam and Brasov
 ## License
 
 The MIT License (MIT)
+
+Wazero and PDFium come with the `Apache License 2.0` license
