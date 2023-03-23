@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/klippa-app/go-pdfium/requests"
+
 	"github.com/klippa-app/pdfium-cli/pdf"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func init() {

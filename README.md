@@ -13,6 +13,7 @@
 * Get information of a PDF
 * Merge multiple PDFs into a single PDF
 * Extracting text from PDFs
+* Extracting images from PDFs
 * Exploding PDFs into one PDF file per page
 * Rendering PDFs in different formats
 
@@ -76,7 +77,11 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   explode     Explode a PDF into multiple PDFs
   help        Help about any command
+  images      Extract the images of a PDF
+  info        Get the information of a PDF
+  merge       Merge multiple PDFs into a single PDF
   render      Render a PDF into images
+  text        Get the text of a PDF
 
 Flags:
   -h, --help   help for pdfium
