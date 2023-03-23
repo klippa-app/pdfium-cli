@@ -17,6 +17,8 @@
 * Extracting text from PDFs
 * Extracting images from PDFs
 * Extracting attachments from PDFs
+* Extracting thumbnails from PDFs
+* Extracting JavaScripts from PDFs
 
 ## PDFium & Wazero
 
@@ -75,14 +77,18 @@ Usage:
   pdfium [command]
 
 Available Commands:
+  attachments Extract the attachments of a PDF
   completion  Generate the autocompletion script for the specified shell
   explode     Explode a PDF into multiple PDFs
   help        Help about any command
   images      Extract the images of a PDF
   info        Get the information of a PDF
+  javascripts Extract the javascripts of a PDF
   merge       Merge multiple PDFs into a single PDF
   render      Render a PDF into images
   text        Get the text of a PDF
+  thumbnails  Extract the attachments of a PDF
+
 
 Flags:
   -h, --help   help for pdfium
