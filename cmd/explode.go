@@ -28,11 +28,11 @@ var explodeCmd = &cobra.Command{
 		}
 
 		if _, err := os.Stat(args[0]); err != nil {
-			return fmt.Errorf("could not open input file %s: %w", args[0], err)
+			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
 		}
 
 		if !strings.Contains(args[1], "%d") {
-			return fmt.Errorf("output string %s should contain page pattern %%d", args[1])
+			return fmt.Errorf("output string %s should contain page pattern %%d\n", args[1])
 		}
 
 		return nil
@@ -40,14 +40,21 @@ var explodeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w", args[0], err)
+			cmd.PrintErrf("could not load pdfium: %w\n", err)
 			return
 		}
 		defer pdf.ClosePdfium()
 
-		document, err := openFile(args[0])
+		file, err := os.Open(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w", args[0], err)
+			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			return
+		}
+		defer file.Close()
+
+		document, err := openFile(file)
+		if err != nil {
+			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
 			return
 		}
 		defer pdf.PdfiumInstance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: document.Document})
@@ -56,7 +63,7 @@ var explodeCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get page count for PDF %s: %w", args[0], err)
+			cmd.PrintErrf("could not get page count for PDF %s: %w\n", args[0], err)
 			return
 		}
 
@@ -67,7 +74,7 @@ var explodeCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, false)
 		if err != nil {
-			cmd.PrintErrf("invalid page range '%s': %s", pageRange, err)
+			cmd.PrintErrf("invalid page range '%s': %s\n", pageRange, err)
 			return
 		}
 
@@ -75,7 +82,7 @@ var explodeCmd = &cobra.Command{
 		for _, page := range splitPages {
 			newDocument, err := pdf.PdfiumInstance.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
 			if err != nil {
-				cmd.PrintErrf("could not create new document for page %s: %w", page, err)
+				cmd.PrintErrf("could not create new document for page %s: %w\n", page, err)
 				return
 			}
 
@@ -90,24 +97,32 @@ var explodeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not import page %s into new document: %w", page, err)
+				cmd.PrintErrf("could not import page %s into new document: %w\n", page, err)
 				return
 			}
 
 			newFilePath := strings.Replace(args[1], "%d", page, -1)
+			createdFile, err := os.Create(newFilePath)
+			if err != nil {
+				cmd.PrintErrf("could not save document for page %s: %w\n", page, err)
+				return
+			}
+
 			_, err = pdf.PdfiumInstance.FPDF_SaveAsCopy(&requests.FPDF_SaveAsCopy{
-				Document: newDocument.Document,
-				FilePath: &newFilePath,
+				Document:   newDocument.Document,
+				FileWriter: createdFile,
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not save document for page %s: %w", page, err)
+				createdFile.Close()
+				cmd.PrintErrf("could not save document for page %s: %w\n", page, err)
 				return
 			}
 
 			closeFunc()
+			createdFile.Close()
 
-			cmd.Printf("Exploded page %s into %s", page, newFilePath)
+			cmd.Printf("Exploded page %s into %s\n", page, newFilePath)
 		}
 	},
 }
