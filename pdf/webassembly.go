@@ -1,5 +1,4 @@
 //go:build !usecgo
-// +build !usecgo
 
 package pdf
 
