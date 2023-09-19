@@ -19,13 +19,13 @@ func init() {
 var attachmentsCmd = &cobra.Command{
 	Use:   "attachments [input] [output-folder]",
 	Short: "Extract the attachments of a PDF",
-	Long:  "Extract the attachments of a PDF and store them as file.",
+	Long:  "Extract the attachments of a PDF and store them as file.\n[input] can either be a file path or - for stdin.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err
 		}
 
-		if _, err := os.Stat(args[0]); err != nil {
+		if err := validFile(args[0]); err != nil {
 			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
 		}
 
@@ -48,19 +48,12 @@ var attachmentsCmd = &cobra.Command{
 		}
 		defer pdf.ClosePdfium()
 
-		file, err := os.Open(args[0])
+		document, closeFile, err := openFile(args[0])
 		if err != nil {
 			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
 			return
 		}
-		defer file.Close()
-
-		document, err := openFile(file)
-		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
-			return
-		}
-		defer pdf.PdfiumInstance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: document.Document})
+		defer closeFile()
 
 		attachments, err := pdf.PdfiumInstance.GetAttachments(&requests.GetAttachments{
 			Document: document.Document,

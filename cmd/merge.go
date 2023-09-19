@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/klippa-app/go-pdfium/requests"
@@ -18,7 +19,7 @@ func init() {
 var mergeCmd = &cobra.Command{
 	Use:   "merge [input] [input] ([input]...) [output]",
 	Short: "Merge multiple PDFs into a single PDF",
-	Long:  "Merge multiple PDFs into a single PDF",
+	Long:  "Merge multiple PDFs into a single PDF.\n[output] can either be a file path or - for stdout.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.MinimumNArgs(3)(cmd, args); err != nil {
 			return err
@@ -48,21 +49,14 @@ var mergeCmd = &cobra.Command{
 
 		mergedPageCount := 0
 		for i := 0; i < len(args)-1; i++ {
-			file, err := os.Open(args[i])
-			if err != nil {
-				cmd.PrintErrf("could not open input file %s: %w", args[i], err)
-				return
-			}
-			defer file.Close()
-
-			document, err := openFile(file)
+			document, closeFile, err := openFile(args[i])
 			if err != nil {
 				cmd.PrintErrf("could not open input file %s: %w", args[i], err)
 				return
 			}
 
 			closeFunc := func() {
-				pdf.PdfiumInstance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: newDocument.Document})
+				closeFile()
 			}
 
 			pageCount, err := pdf.PdfiumInstance.FPDF_GetPageCount(&requests.FPDF_GetPageCount{
@@ -107,17 +101,23 @@ var mergeCmd = &cobra.Command{
 			closeFunc()
 		}
 
-		createdFile, err := os.Create(args[len(args)-1])
-		if err != nil {
-			cmd.PrintErrf("could not save document: %w", err)
-			return
-		}
+		var fileWriter io.Writer
+		if args[len(args)-1] == stdFilename {
+			fileWriter = os.Stdout
+		} else {
+			createdFile, err := os.Create(args[len(args)-1])
+			if err != nil {
+				cmd.PrintErrf("could not save document: %w", err)
+				return
+			}
 
-		defer createdFile.Close()
+			defer createdFile.Close()
+			fileWriter = createdFile
+		}
 
 		_, err = pdf.PdfiumInstance.FPDF_SaveAsCopy(&requests.FPDF_SaveAsCopy{
 			Document:   newDocument.Document,
-			FileWriter: createdFile,
+			FileWriter: fileWriter,
 		})
 		if err != nil {
 			cmd.PrintErrf("could not save new document %s: %w", err)

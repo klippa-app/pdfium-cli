@@ -19,6 +19,8 @@
 * Extracting attachments from PDFs
 * Extracting thumbnails from PDFs
 * Extracting JavaScripts from PDFs
+* Piping input through stdin when the input is one file
+* Piping output through stdout when the output is one file
 
 ## PDFium & Wazero
 

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/klippa-app/pdfium-cli/pdf"
@@ -25,7 +24,7 @@ var infoCmd = &cobra.Command{
 			return err
 		}
 
-		if _, err := os.Stat(args[0]); err != nil {
+		if err := validFile(args[0]); err != nil {
 			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
 		}
 
@@ -39,18 +38,14 @@ var infoCmd = &cobra.Command{
 		}
 		defer pdf.ClosePdfium()
 
-		file, err := os.Open(args[0])
+		document, closeFile, err := openFile(args[0])
 		if err != nil {
 			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
 			return
 		}
-		defer file.Close()
 
-		document, err := openFile(file)
-		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
-			return
-		}
+		defer closeFile()
+
 		defer pdf.PdfiumInstance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: document.Document})
 
 		fileVersion, err := pdf.PdfiumInstance.FPDF_GetFileVersion(&requests.FPDF_GetFileVersion{
