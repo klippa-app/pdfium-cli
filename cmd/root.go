@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/klippa-app/pdfium-cli/version"
+
 	"github.com/spf13/cobra"
 )
 
@@ -9,9 +11,10 @@ var (
 	//cfgFile string
 
 	rootCmd = &cobra.Command{
-		Use:   "pdfium",
-		Short: "A CLI tool to use pdfium",
-		Long:  `pdfium-cli is a CLI tool that allows you to use pdfium from the CLI`,
+		Use:     "pdfium",
+		Short:   "A CLI tool to use pdfium",
+		Long:    `pdfium-cli is a CLI tool that allows you to use pdfium from the CLI`,
+		Version: version.VERSION,
 	}
 )
 
