@@ -58,14 +58,14 @@ var imagesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w\n", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
 			return
 		}
 		defer closeFile()
@@ -74,7 +74,7 @@ var imagesCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get page count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -85,7 +85,7 @@ var imagesCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, false)
 		if err != nil {
-			cmd.PrintErrf("invalid page range '%s': %s\n", pageRange, err)
+			cmd.PrintErr(fmt.Errorf("invalid page range '%s': %s\n", pageRange, err))
 			return
 		}
 
@@ -98,7 +98,7 @@ var imagesCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				cmd.PrintErrf("could not load page for page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not load page for page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -116,7 +116,7 @@ var imagesCmd = &cobra.Command{
 
 			if err != nil {
 				closePageFunc()
-				cmd.PrintErrf("could not get object count for page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get object count for page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -130,7 +130,7 @@ var imagesCmd = &cobra.Command{
 
 				if err != nil {
 					closePageFunc()
-					cmd.PrintErrf("could not get object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 					return
 				}
 
@@ -140,7 +140,7 @@ var imagesCmd = &cobra.Command{
 
 				if err != nil {
 					closePageFunc()
-					cmd.PrintErrf("could not get object type for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get object type for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 					return
 				}
 
@@ -155,7 +155,7 @@ var imagesCmd = &cobra.Command{
 
 					if err != nil {
 						closePageFunc()
-						cmd.PrintErrf("could not get image for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not get image for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 
@@ -172,7 +172,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErrf("could not get image stride for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not get image stride for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 
@@ -183,7 +183,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErrf("could not get image width for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not get image width for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 
@@ -194,7 +194,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErrf("could not get image height for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not get image height for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 
@@ -205,7 +205,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErrf("could not get image format for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not get image format for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 
@@ -216,7 +216,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErrf("could not get image buffer for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not get image buffer for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 
@@ -257,7 +257,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErrf("could not create output file for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err)
+						cmd.PrintErr(fmt.Errorf("could not create output file for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
 						return
 					}
 

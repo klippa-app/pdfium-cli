@@ -3,44 +3,15 @@ package pdf
 import (
 	"errors"
 	"fmt"
+	"github.com/klippa-app/go-pdfium"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/klippa-app/go-pdfium"
-	"github.com/klippa-app/go-pdfium/webassembly"
 )
 
 // Be sure to close pools/instances when you're done with them.
 var pool pdfium.Pool
 var PdfiumInstance pdfium.Pdfium
 var isLoaded bool
-
-func LoadPdfium() error {
-	if isLoaded {
-		return nil
-	}
-
-	var err error
-	// Init the PDFium library and return the instance to open documents.
-	pool, err = webassembly.Init(webassembly.Config{
-		MinIdle:  1,
-		MaxIdle:  1,
-		MaxTotal: 1,
-	})
-	if err != nil {
-		return err
-	}
-
-	PdfiumInstance, err = pool.GetInstance(time.Second * 30)
-	if err != nil {
-		return err
-	}
-
-	isLoaded = true
-
-	return nil
-}
 
 func ClosePdfium() {
 	if !isLoaded {

@@ -41,14 +41,14 @@ var explodeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w\n", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
 			return
 		}
 		defer closeFile()
@@ -57,7 +57,7 @@ var explodeCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get page count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -82,7 +82,7 @@ var explodeCmd = &cobra.Command{
 		for _, page := range splitPages {
 			newDocument, err := pdf.PdfiumInstance.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
 			if err != nil {
-				cmd.PrintErrf("could not create new document for page %s: %w\n", page, err)
+				cmd.PrintErr(fmt.Errorf("could not create new document for page %s: %w\n", page, err))
 				return
 			}
 
@@ -97,7 +97,7 @@ var explodeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not import page %s into new document: %w\n", page, err)
+				cmd.PrintErr(fmt.Errorf("could not import page %s into new document: %w\n", page, err))
 				return
 			}
 
@@ -109,7 +109,7 @@ var explodeCmd = &cobra.Command{
 			} else {
 				createdFile, err := os.Create(newFilePath)
 				if err != nil {
-					cmd.PrintErrf("could not save document for page %s: %w\n", page, err)
+					cmd.PrintErr(fmt.Errorf("could not save document for page %s: %w\n", page, err))
 					return
 				}
 				fileWriter = createdFile
@@ -126,7 +126,7 @@ var explodeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not save document for page %s: %w\n", page, err)
+				cmd.PrintErr(fmt.Errorf("could not save document for page %s: %w\n", page, err))
 				return
 			}
 

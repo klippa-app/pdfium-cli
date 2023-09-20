@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/klippa-app/go-pdfium/enums"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/klippa-app/pdfium-cli/pdf"
 
+	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/spf13/cobra"
 )
@@ -53,14 +53,14 @@ var thumbnailsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w\n", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
 			return
 		}
 
@@ -70,7 +70,7 @@ var thumbnailsCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get page count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -81,7 +81,7 @@ var thumbnailsCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, false)
 		if err != nil {
-			cmd.PrintErrf("invalid page range '%s': %s\n", pageRange, err)
+			cmd.PrintErr(fmt.Errorf("invalid page range '%s': %s\n", pageRange, err))
 			return
 		}
 
@@ -94,7 +94,7 @@ var thumbnailsCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				cmd.PrintErrf("could not load page for page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not load page for page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -112,8 +112,14 @@ var thumbnailsCmd = &cobra.Command{
 
 			if err != nil {
 				closePageFunc()
-				cmd.PrintErrf("could not get image for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
-				return
+				// Signatures not enabled in this build.
+				if isExperimentalError(err) {
+					cmd.PrintErr(fmt.Errorf("Thumbnail support is not enabled in your build, build with the build tag pdfium_experimental to enable!\n"))
+					return
+				} else {
+					cmd.PrintErr(fmt.Errorf("could not get image for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
+					return
+				}
 			}
 
 			// No bitmap found.
@@ -134,7 +140,7 @@ var thumbnailsCmd = &cobra.Command{
 			if err != nil {
 				closePageFunc()
 				closeBitmapFunc()
-				cmd.PrintErrf("could not get image stride for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get image stride for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -145,7 +151,7 @@ var thumbnailsCmd = &cobra.Command{
 			if err != nil {
 				closePageFunc()
 				closeBitmapFunc()
-				cmd.PrintErrf("could not get image width for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get image width for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -156,7 +162,7 @@ var thumbnailsCmd = &cobra.Command{
 			if err != nil {
 				closePageFunc()
 				closeBitmapFunc()
-				cmd.PrintErrf("could not get image height for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get image height for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -167,7 +173,7 @@ var thumbnailsCmd = &cobra.Command{
 			if err != nil {
 				closePageFunc()
 				closeBitmapFunc()
-				cmd.PrintErrf("could not get image format for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get image format for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -178,7 +184,7 @@ var thumbnailsCmd = &cobra.Command{
 			if err != nil {
 				closePageFunc()
 				closeBitmapFunc()
-				cmd.PrintErrf("could not get image buffer for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get image buffer for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 
@@ -219,7 +225,7 @@ var thumbnailsCmd = &cobra.Command{
 			if err != nil {
 				closePageFunc()
 				closeBitmapFunc()
-				cmd.PrintErrf("could not create output file for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not create output file for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
 				return
 			}
 

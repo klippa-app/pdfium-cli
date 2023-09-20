@@ -43,14 +43,14 @@ var attachmentsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w\n", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
 			return
 		}
 		defer closeFile()
@@ -59,7 +59,7 @@ var attachmentsCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get attachment count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get attachment count for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -68,7 +68,7 @@ var attachmentsCmd = &cobra.Command{
 				filePath := path.Join(args[1], attachments.Attachments[i].Name)
 				outFile, err := os.Create(filePath)
 				if err != nil {
-					cmd.PrintErrf("could not create output file for attachment %d for PDF %s: %w\n", i, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not create output file for attachment %d for PDF %s: %w\n", i, args[0], err))
 					return
 				}
 
