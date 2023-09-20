@@ -1,4 +1,4 @@
-//go:build usecgo
+//go:build pdfium_cli_use_cgo
 
 package pdf
 
