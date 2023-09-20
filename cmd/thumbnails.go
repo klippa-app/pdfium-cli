@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"path"
 	"strconv"
@@ -29,7 +30,7 @@ func init() {
 var thumbnailsCmd = &cobra.Command{
 	Use:   "thumbnails [input] [output-folder]",
 	Short: "Extract the attachments of a PDF",
-	Long:  "Extract the attachments of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\nThis extracts embedded thumbnails, it does not render a thumbnail of the page. Not all PDFs and pages have thumbnails. You can use the render command if you want to generate thumbnails.",
+	Long:  "Extract the attachments of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\nThis extracts embedded thumbnails, it does not render a thumbnail of the page. Not all PDFs and pages have thumbnails. You can use the render command if you want to generate thumbnails.[output-folder] can be either a folder or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err
@@ -39,13 +40,15 @@ var thumbnailsCmd = &cobra.Command{
 			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
 		}
 
-		folderStat, err := os.Stat(args[1])
-		if err != nil {
-			return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
-		}
+		if args[1] != stdFilename {
+			folderStat, err := os.Stat(args[1])
+			if err != nil {
+				return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
+			}
 
-		if !folderStat.IsDir() {
-			return fmt.Errorf("output folder %s is not a folder\n", args[1])
+			if !folderStat.IsDir() {
+				return fmt.Errorf("output folder %s is not a folder\n", args[1])
+			}
 		}
 
 		return nil
@@ -86,6 +89,7 @@ var thumbnailsCmd = &cobra.Command{
 		}
 
 		pages := strings.Split(*parsedPageRange, ",")
+		imageCount := 0
 		for _, page := range pages {
 			pageInt, _ := strconv.Atoi(page)
 			page, err := pdf.PdfiumInstance.FPDF_LoadPage(&requests.FPDF_LoadPage{
@@ -221,39 +225,59 @@ var thumbnailsCmd = &cobra.Command{
 			}
 
 			filePath := path.Join(args[1], fmt.Sprintf("thumbnail-page-%d.%s", pageInt, ext))
-			outFile, err := os.Create(filePath)
-			if err != nil {
-				closePageFunc()
-				closeBitmapFunc()
-				cmd.PrintErr(fmt.Errorf("could not create output file for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
-				return
-			}
 
-			if fileType == "png" {
-				err = png.Encode(outFile, img)
+			closeFunc := func() {}
+			var outWriter io.Writer
+			if args[1] != stdFilename {
+				outFile, err := os.Create(filePath)
 				if err != nil {
 					closePageFunc()
 					closeBitmapFunc()
+					cmd.PrintErr(fmt.Errorf("could not create output file for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err))
+					return
+				}
+				outWriter = outFile
+				closeFunc = func() {
 					outFile.Close()
+				}
+			} else {
+				if imageCount > 0 {
+					os.Stdout.WriteString("\n")
+					os.Stdout.WriteString(stdFileDelimiter)
+					os.Stdout.WriteString("\n")
+				}
+				outWriter = os.Stdout
+			}
+
+			if fileType == "png" {
+				err = png.Encode(outWriter, img)
+				if err != nil {
+					closePageFunc()
+					closeBitmapFunc()
+					closeFunc()
 					return
 				}
 			} else {
 				var opt jpeg.Options
 				opt.Quality = jpegQuality
 
-				err = jpeg.Encode(outFile, img, &opt)
+				err = jpeg.Encode(outWriter, img, &opt)
 				if err != nil {
 					closePageFunc()
 					closeBitmapFunc()
-					outFile.Close()
+					closeFunc()
 					return
 				}
 			}
 
-			outFile.Close()
+			closeFunc()
 			closeBitmapFunc()
 
-			cmd.Printf("Exported thumbnail from page %d into %s\n", pageInt, filePath)
+			if args[1] != stdFilename {
+				cmd.Printf("Exported thumbnail from page %d into %s\n", pageInt, filePath)
+			}
+
+			imageCount++
 		}
 	},
 }

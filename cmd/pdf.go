@@ -14,12 +14,14 @@ import (
 
 var (
 	// Used for flags.
-	password string
-	pages    string
+	password         string
+	stdFileDelimiter string
+	pages            string
 )
 
 func addGenericPDFOptions(command *cobra.Command) {
-	command.Flags().StringVarP(&password, "password", "p", "", "Password on the input PDF file")
+	command.Flags().StringVarP(&password, "password", "p", "", "Password on the input PDF file(s).")
+	command.Flags().StringVarP(&stdFileDelimiter, "std-file-delimiter", "", "--pdfium-cli-file-boundary", "The delimiter to use when having multiple files in your input and/or output.")
 }
 
 func addPagesOption(intro string, command *cobra.Command) {
