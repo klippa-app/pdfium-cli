@@ -7,6 +7,7 @@ import (
 	"github.com/klippa-app/pdfium-cli/pdf"
 
 	"github.com/klippa-app/go-pdfium/requests"
+	"github.com/klippa-app/go-pdfium/responses"
 	"github.com/spf13/cobra"
 )
 
@@ -154,8 +155,15 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get signature count for PDF %s: %w\n", args[0], err)
-			return
+			// Signatures not enabled in this build.
+			if isExperimentalError(err) {
+				signatureCount = &responses.FPDF_GetSignatureCount{
+					Count: 0,
+				}
+			} else {
+				cmd.PrintErrf("could not get signature count for PDF %s: %w\n", args[0], err)
+				return
+			}
 		}
 
 		if signatureCount.Count > 0 {

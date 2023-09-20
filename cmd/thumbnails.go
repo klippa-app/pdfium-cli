@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/klippa-app/go-pdfium/enums"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/klippa-app/pdfium-cli/pdf"
 
+	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/spf13/cobra"
 )
@@ -112,8 +112,14 @@ var thumbnailsCmd = &cobra.Command{
 
 			if err != nil {
 				closePageFunc()
-				cmd.PrintErrf("could not get image for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
-				return
+				// Signatures not enabled in this build.
+				if isExperimentalError(err) {
+					cmd.PrintErrf("Thumbnail support is not enabled in your build, build with the build tag pdfium_experimental to enable!\n")
+					return
+				} else {
+					cmd.PrintErrf("could not get image for thumbnail of page %d for PDF %s: %w\n", pageInt, args[0], err)
+					return
+				}
 			}
 
 			// No bitmap found.
