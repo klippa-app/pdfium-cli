@@ -34,14 +34,14 @@ var infoCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w\n", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
 			return
 		}
 
@@ -53,7 +53,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get version for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get version for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -78,7 +78,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get page count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -94,7 +94,7 @@ var infoCmd = &cobra.Command{
 				},
 			})
 			if err != nil {
-				cmd.PrintErrf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err))
 				return
 			}
 
@@ -114,7 +114,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get permissions for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get permissions for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -141,7 +141,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get security handler revision for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get security handler revision for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -161,7 +161,7 @@ var infoCmd = &cobra.Command{
 					Count: 0,
 				}
 			} else {
-				cmd.PrintErrf("could not get signature count for PDF %s: %w\n", args[0], err)
+				cmd.PrintErr(fmt.Errorf("could not get signature count for PDF %s: %w\n", args[0], err))
 				return
 			}
 		}
@@ -174,7 +174,7 @@ var infoCmd = &cobra.Command{
 					Index:    i,
 				})
 				if err != nil {
-					cmd.PrintErrf("could not get signature object %d for PDF %s: %w\n", i, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get signature object %d for PDF %s: %w\n", i, args[0], err))
 					return
 				}
 
@@ -182,7 +182,7 @@ var infoCmd = &cobra.Command{
 					Signature: signatureObj.Signature,
 				})
 				if err != nil {
-					cmd.PrintErrf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], err))
 					return
 				}
 				time := ""
@@ -194,7 +194,7 @@ var infoCmd = &cobra.Command{
 					Signature: signatureObj.Signature,
 				})
 				if err != nil {
-					cmd.PrintErrf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], err))
 					return
 				}
 
@@ -211,7 +211,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get signature count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get signature count for PDF %s: %w\n", args[0], err))
 			return
 		}
 

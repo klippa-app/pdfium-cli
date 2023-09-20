@@ -36,14 +36,14 @@ var mergeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		newDocument, err := pdf.PdfiumInstance.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
 		if err != nil {
-			cmd.PrintErrf("could not create new document: %w", err)
+			cmd.PrintErr(fmt.Errorf("could not create new document: %w", err))
 			return
 		}
 
@@ -51,7 +51,7 @@ var mergeCmd = &cobra.Command{
 		for i := 0; i < len(args)-1; i++ {
 			document, closeFile, err := openFile(args[i])
 			if err != nil {
-				cmd.PrintErrf("could not open input file %s: %w", args[i], err)
+				cmd.PrintErr(fmt.Errorf("could not open input file %s: %w", args[i], err))
 				return
 			}
 
@@ -64,14 +64,14 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not get page ranges for file %s: %w", args[i], err)
+				cmd.PrintErr(fmt.Errorf("could not get page ranges for file %s: %w", args[i], err))
 				return
 			}
 
 			pageRange, calculatedPageCount, err := pdf.NormalizePageRange(pageCount.PageCount, "first-last", false)
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not calculate page range for file %s: %w", args[i], err)
+				cmd.PrintErr(fmt.Errorf("could not calculate page range for file %s: %w", args[i], err))
 				return
 			}
 
@@ -83,7 +83,7 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not import pages for file %s: %w", args[i], err)
+				cmd.PrintErr(fmt.Errorf("could not import pages for file %s: %w", args[i], err))
 				return
 			}
 
@@ -94,7 +94,7 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErrf("could not close document for file %s: %w", args[i], err)
+				cmd.PrintErr(fmt.Errorf("could not close document for file %s: %w", args[i], err))
 				return
 			}
 
@@ -107,7 +107,7 @@ var mergeCmd = &cobra.Command{
 		} else {
 			createdFile, err := os.Create(args[len(args)-1])
 			if err != nil {
-				cmd.PrintErrf("could not save document: %w", err)
+				cmd.PrintErr(fmt.Errorf("could not save document: %w", err))
 				return
 			}
 
@@ -120,7 +120,7 @@ var mergeCmd = &cobra.Command{
 			FileWriter: fileWriter,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not save new document %s: %w", err)
+			cmd.PrintErr(fmt.Errorf("could not save new document %s: %w", err))
 			return
 		}
 
@@ -128,7 +128,7 @@ var mergeCmd = &cobra.Command{
 			Document: newDocument.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not save new document %s: %w", err)
+			cmd.PrintErr(fmt.Errorf("could not save new document %s: %w", err))
 			return
 		}
 	},

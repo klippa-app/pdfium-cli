@@ -57,14 +57,14 @@ var textCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErrf("could not load pdfium: %w\n", err)
+			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErrf("could not open input file %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
 			return
 		}
 
@@ -74,7 +74,7 @@ var textCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErrf("could not get page count for PDF %s: %w\n", args[0], err)
+			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
 			return
 		}
 
@@ -85,7 +85,7 @@ var textCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, false)
 		if err != nil {
-			cmd.PrintErrf("invalid page range '%s': %s\n", pageRange, err)
+			cmd.PrintErr(fmt.Errorf("invalid page range '%s': %s\n", pageRange, err))
 			return
 		}
 
@@ -121,7 +121,7 @@ var textCmd = &cobra.Command{
 					PixelPositions:         pixelPositions,
 				})
 				if err != nil {
-					cmd.PrintErrf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err))
 					return
 				}
 
@@ -137,7 +137,7 @@ var textCmd = &cobra.Command{
 					Page: textPages[i],
 				})
 				if err != nil {
-					cmd.PrintErrf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err)
+					cmd.PrintErr(fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err))
 					return
 				}
 
