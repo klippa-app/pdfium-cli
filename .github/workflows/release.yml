@@ -22,15 +22,15 @@ jobs:
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          go build -o artifacts/pdfium-linux-x64 main.go
+          go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-linux-x64 main.go
       - name: Build MacOS
         if: matrix.os == 'macos-latest'
         run: |
-          go build -o artifacts/pdfium-mac-x64 main.go
+          go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-mac-x64 main.go
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |
-          go build -o artifacts/pdfium-windows-x64 main.go
+          go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-windows-x64 main.go
       - uses: actions/upload-artifact@v3
         with:
           name: builds
