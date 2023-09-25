@@ -56,7 +56,7 @@ jobs:
           sudo rm pdfium-linux-x64.tgz
           sudo cp ./.github/workflows/pdfium.pc /usr/lib/pkgconfig/pdfium.pc
           sudo apt-get update -y
-          sudo apt-get install -y libturbojpeg
+          sudo apt-get install -y libturbojpeg libturbojpeg-dev
 
       - name: Set up PDFium library and libjpeg-turbo (MacOS)
         if: matrix.os == 'macos-latest'
