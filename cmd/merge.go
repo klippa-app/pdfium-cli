@@ -23,16 +23,16 @@ var mergeCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) error {
 		if args[0] == stdFilename {
 			if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
-				return err
+				return newExitCodeError(err, ExitCodeInvalidArguments)
 			}
 		} else {
 			if err := cobra.MinimumNArgs(3)(cmd, args); err != nil {
-				return err
+				return newExitCodeError(err, ExitCodeInvalidArguments)
 			}
 
 			for i := 0; i < len(args)-1; i++ {
 				if _, err := os.Stat(args[i]); err != nil {
-					return fmt.Errorf("could not open input file %s: %w", args[0], err)
+					return fmt.Errorf("could not open input file %s: %w", args[0], newExitCodeError(err, ExitCodeInvalidInput))
 				}
 			}
 		}
@@ -42,14 +42,14 @@ var mergeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w", err))
+			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		newDocument, err := pdf.PdfiumInstance.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not create new document: %w", err))
+			handleError(cmd, fmt.Errorf("could not create new document: %w", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -73,7 +73,7 @@ var mergeCmd = &cobra.Command{
 				if err == stdinNoMoreFiles {
 					break
 				}
-				cmd.PrintErr(fmt.Errorf("could not open input file %s: %w", args[i], err))
+				handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[i], err), ExitCodeInvalidInput)
 				return
 			}
 
@@ -86,14 +86,14 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErr(fmt.Errorf("could not get page ranges for file %s: %w", args[i], err))
+				handleError(cmd, fmt.Errorf("could not get page ranges for file %s: %w", args[i], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
 			pageRange, calculatedPageCount, err := pdf.NormalizePageRange(pageCount.PageCount, "first-last", false)
 			if err != nil {
 				closeFunc()
-				cmd.PrintErr(fmt.Errorf("could not calculate page range for file %s: %w", args[i], err))
+				handleError(cmd, fmt.Errorf("invalid page range 'first-last': %w\n", err), ExitCodeInvalidPageRange)
 				return
 			}
 
@@ -105,7 +105,7 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErr(fmt.Errorf("could not import pages for file %s: %w", args[i], err))
+				handleError(cmd, fmt.Errorf("could not import pages for file %s: %w", args[i], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -116,7 +116,7 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErr(fmt.Errorf("could not close document for file %s: %w", args[i], err))
+				handleError(cmd, fmt.Errorf("could not close document for file %s: %w", args[i], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -130,7 +130,7 @@ var mergeCmd = &cobra.Command{
 		} else {
 			createdFile, err := os.Create(args[len(args)-1])
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not save document: %w", err))
+				handleError(cmd, fmt.Errorf("could not save document: %w", err), ExitCodeInvalidOutput)
 				return
 			}
 
@@ -143,7 +143,7 @@ var mergeCmd = &cobra.Command{
 			FileWriter: fileWriter,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not save new document %s: %w", err))
+			handleError(cmd, fmt.Errorf("could not save new document: %w", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -151,7 +151,7 @@ var mergeCmd = &cobra.Command{
 			Document: newDocument.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not save new document %s: %w", err))
+			handleError(cmd, fmt.Errorf("could not save new document: %w", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 	},

@@ -3,10 +3,12 @@ package cmd
 import (
 	"bytes"
 	"errors"
-	"github.com/klippa-app/pdfium-cli/pdf"
+	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/klippa-app/pdfium-cli/pdf"
 
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
@@ -95,7 +97,7 @@ func openFile(filename string) (*responses.OpenDocument, func(), error) {
 
 	openedDocument, err := pdf.PdfiumInstance.OpenDocument(openDocumentRequest)
 	if err != nil {
-		return nil, closeFile, err
+		return nil, closeFile, fmt.Errorf("could not open file with pdfium: %w", newPdfiumError(err))
 	}
 
 	originalCloseFile := closeFile
@@ -117,4 +119,69 @@ func validFile(filename string) error {
 	}
 
 	return nil
+}
+
+type pdfiumError struct {
+	originalError error
+}
+
+func (e *pdfiumError) Error() string {
+	return e.originalError.Error()
+}
+
+func newPdfiumError(err error) *pdfiumError {
+	return &pdfiumError{
+		originalError: err,
+	}
+}
+
+type ExitCodeError struct {
+	originalError error
+	exitCode      int
+}
+
+func (e *ExitCodeError) Error() string {
+	return e.originalError.Error()
+}
+
+func (e *ExitCodeError) ExitCode() int {
+	return e.exitCode
+}
+
+func newExitCodeError(err error, code int) *ExitCodeError {
+	return &ExitCodeError{
+		originalError: err,
+		exitCode:      code,
+	}
+}
+
+func handleError(cmd *cobra.Command, err error, defaultCode int) {
+	cmd.PrintErr(err)
+
+	errorCode := defaultCode
+
+	exitCodeError := &ExitCodeError{}
+	if errors.As(err, &exitCodeError) {
+		errorCode = exitCodeError.ExitCode()
+	}
+
+	target := &pdfiumError{}
+	if errors.As(err, &target) {
+		errorMsg := target.Error()
+		if strings.HasPrefix(errorMsg, "1: ") {
+			errorCode = ExitCodePdfiumUnknownError
+		} else if strings.HasPrefix(errorMsg, "2: ") {
+			errorCode = ExitCodePdfiumFileError
+		} else if strings.HasPrefix(errorMsg, "3: ") {
+			errorCode = ExitCodePdfiumBadFileError
+		} else if strings.HasPrefix(errorMsg, "4: ") {
+			errorCode = ExitCodePdfiumPasswordError
+		} else if strings.HasPrefix(errorMsg, "5: ") {
+			errorCode = ExitCodePdfiumSecurityError
+		} else if strings.HasPrefix(errorMsg, "6: ") {
+			errorCode = ExitCodePdfiumPageError
+		}
+	}
+
+	os.Exit(errorCode)
 }

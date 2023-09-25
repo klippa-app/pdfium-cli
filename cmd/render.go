@@ -46,11 +46,11 @@ var renderCmd = &cobra.Command{
 	Long:  "Render a PDF into images.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout.  or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it. The output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. render invoice.pdf invoice-%d.jpg, the result for a 2-page PDF will be invoice-1.jpg and invoice-2.jpg.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
-			return err
+			return newExitCodeError(err, ExitCodeInvalidArguments)
 		}
 
 		if err := validFile(args[0]); err != nil {
-			return fmt.Errorf("could not open input file %s: %w", args[0], err)
+			return fmt.Errorf("could not open input file %s: %w", args[0], newExitCodeError(err, ExitCodeInvalidInput))
 		}
 
 		return nil
@@ -58,14 +58,14 @@ var renderCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
+			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[0], err), ExitCodeInvalidInput)
 			return
 		}
 		defer closeFile()
@@ -74,7 +74,7 @@ var renderCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -85,7 +85,7 @@ var renderCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, false)
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("invalid page range '%s': %s\n", pageRange, err))
+			handleError(cmd, fmt.Errorf("invalid page range '%s': %w\n", pageRange, err), ExitCodeInvalidPageRange)
 			return
 		}
 
@@ -94,7 +94,7 @@ var renderCmd = &cobra.Command{
 
 		if len(splitPages) > 1 && !combinePages {
 			if args[1] != stdFilename && !strings.Contains(args[1], "%d") {
-				cmd.PrintErr(fmt.Errorf("output string %s should contain page pattern %%d\n", args[1]))
+				handleError(cmd, fmt.Errorf("output string %s should contain page pattern %%d\n", args[1]), ExitCodeInvalidArguments)
 				return
 			}
 		}
@@ -115,7 +115,7 @@ var renderCmd = &cobra.Command{
 		} else if fileType == "png" {
 			outputFormat = requests.RenderToFileOutputFormatPNG
 		} else {
-			cmd.PrintErr(fmt.Errorf("invalid file type: %s\n", fileType))
+			handleError(cmd, fmt.Errorf("invalid file type: %s\n", fileType), ExitCodeInvalidArguments)
 			return
 		}
 
@@ -162,16 +162,16 @@ var renderCmd = &cobra.Command{
 
 			result, err := pdf.PdfiumInstance.RenderToFile(renderRequest)
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not render pages %s into image: %w\n", *parsedPageRange, err))
+				handleError(cmd, fmt.Errorf("could not render pages %s into image: %w\n", *parsedPageRange, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
 			if args[1] != stdFilename {
-				cmd.PrintErr(fmt.Errorf("Rendered pages %s into %s\n", *parsedPageRange, args[1]))
+				cmd.Println(fmt.Errorf("Rendered pages %s into %s\n", *parsedPageRange, args[1]))
 			} else {
 				_, err = os.Stdout.Write(*result.ImageBytes)
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not render pages %s into image: %w\n", *parsedPageRange, err))
+					handleError(cmd, fmt.Errorf("could not render pages %s into image: %w\n", *parsedPageRange, err), ExitCodeInvalidOutput)
 					return
 				}
 			}
@@ -218,7 +218,7 @@ var renderCmd = &cobra.Command{
 
 				result, err := pdf.PdfiumInstance.RenderToFile(renderRequest)
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not render page %s into image: %w\n", page, err))
+					handleError(cmd, fmt.Errorf("could not render page %s into image: %w\n", page, newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -232,7 +232,7 @@ var renderCmd = &cobra.Command{
 					}
 					_, err = os.Stdout.Write(*result.ImageBytes)
 					if err != nil {
-						cmd.PrintErr(fmt.Errorf("could not render page %s into image: %w\n", page, err))
+						handleError(cmd, fmt.Errorf("could not render page %s into image: %w\n", page, err), ExitCodeInvalidOutput)
 						return
 					}
 				}
