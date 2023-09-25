@@ -38,7 +38,6 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         go: [ "1.21" ]
-        jpeg-library: ["go-image/jpeg", "libjpeg-turbo"]
     env:
       PDFIUM_VERSION: "6015"
     runs-on: ${{ matrix.os }}
@@ -50,32 +49,24 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: Set up libjpeg-turbo (Linux)
-        if: matrix.os == 'ubuntu-latest' && matrix.jpeg-library == 'libjpeg-turbo'
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libturbojpeg
-
-      - name: Set up libjpeg-turbo (MacOS)
-        if: matrix.os == 'macos-latest' && matrix.jpeg-library == 'libjpeg-turbo'
-        run: |
-          brew install jpeg-turbo
-
-      - name: Set up PDFium library (Linux)
+      - name: Set up PDFium library and libjpeg-turbo (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo curl -L https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F${{ env.PDFIUM_VERSION }}/pdfium-linux-x64.tgz -o pdfium-linux-x64.tgz && sudo mkdir /opt/pdfium && sudo tar -C /opt/pdfium -xvf pdfium-linux-x64.tgz
           sudo rm pdfium-linux-x64.tgz
           sudo cp ./.github/workflows/pdfium.pc /usr/lib/pkgconfig/pdfium.pc
+          sudo apt-get update -y
+          sudo apt-get install -y libturbojpeg
 
-      - name: Set up PDFium library (MacOS)
+      - name: Set up PDFium library and libjpeg-turbo (MacOS)
         if: matrix.os == 'macos-latest'
         run: |
           sudo curl -L https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F${{ env.PDFIUM_VERSION }}/pdfium-mac-x64.tgz -o pdfium-mac-x64.tgz && sudo mkdir /opt/pdfium && sudo tar -C /opt/pdfium -xvf pdfium-mac-x64.tgz
           sudo rm pdfium-mac-x64.tgz
           sudo cp ./.github/workflows/pdfium.pc /usr/local/lib/pkgconfig/pdfium.pc
+          sudo brew install jpeg-turbo
 
-      - name: Set up PDFium library (Windows)
+      - name: Set up PDFium library and libjpeg-turbo (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           curl -L https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F${{ env.PDFIUM_VERSION }}/pdfium-win-x64.tgz -o pdfium-win-x64.tgz
@@ -89,24 +80,24 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           export LD_LIBRARY_PATH="/opt/pdfium/lib"
-          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo -exec "env DYLD_LIBRARY_PATH=/opt/pdfium/lib" -v
+          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -exec "env DYLD_LIBRARY_PATH=/opt/pdfium/lib" -v
 
       - name: Test (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin"
-          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo -v
+          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
 
       - name: Build (Linux & MacOS)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           export LD_LIBRARY_PATH="/opt/pdfium/lib"
-          go build -tags pdfium_experimental,pdfium_cli_use_cgo main.go
+          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
 
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin"
-          go build -tags pdfium_experimental,pdfium_cli_use_cgo main.go
+          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
