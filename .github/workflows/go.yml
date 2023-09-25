@@ -51,13 +51,13 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Set up libjpeg-turbo (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && matrix.jpeg-library == 'libjpeg-turbo'
         run: |
           sudo apt-get update -y
           sudo apt-get install -y libturbojpeg
 
       - name: Set up libjpeg-turbo (MacOS)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'macos-latest' && matrix.jpeg-library == 'libjpeg-turbo'
         run: |
           brew install jpeg-turbo
 
