@@ -90,7 +90,7 @@ var mergeCmd = &cobra.Command{
 				return
 			}
 
-			pageRange, calculatedPageCount, err := pdf.NormalizePageRange(pageCount.PageCount, "first-last", false)
+			pageRange, calculatedPageCount, err := pdf.NormalizePageRange(pageCount.PageCount, "first-last")
 			if err != nil {
 				closeFunc()
 				cmd.PrintErr(fmt.Errorf("could not calculate page range for file %s: %w", args[i], err))
