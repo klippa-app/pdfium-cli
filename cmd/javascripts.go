@@ -19,7 +19,7 @@ func init() {
 var javascriptsCmd = &cobra.Command{
 	Use:   "javascripts [input] [output-folder]",
 	Short: "Extract the javascripts of a PDF",
-	Long:  "Extract the javascripts of a PDF and store them as file.\n[input] can either be a file path or - for stdin.",
+	Long:  "Extract the javascripts of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\n[output-folder] can be either a folder or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err
@@ -29,13 +29,15 @@ var javascriptsCmd = &cobra.Command{
 			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
 		}
 
-		folderStat, err := os.Stat(args[1])
-		if err != nil {
-			return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
-		}
+		if args[1] != stdFilename {
+			folderStat, err := os.Stat(args[1])
+			if err != nil {
+				return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
+			}
 
-		if !folderStat.IsDir() {
-			return fmt.Errorf("output folder %s is not a folder\n", args[1])
+			if !folderStat.IsDir() {
+				return fmt.Errorf("output folder %s is not a folder\n", args[1])
+			}
 		}
 
 		return nil
@@ -65,17 +67,26 @@ var javascriptsCmd = &cobra.Command{
 
 		if len(javascripts.JavaScriptActions) > 0 {
 			for i := 0; i < len(javascripts.JavaScriptActions); i++ {
-				filePath := path.Join(args[1], fmt.Sprintf("%s.js", javascripts.JavaScriptActions[i].Name))
-				outFile, err := os.Create(filePath)
-				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not create output file for javascript %d for PDF %s: %w\n", i, args[0], err))
-					return
+				if args[1] != stdFilename {
+					filePath := path.Join(args[1], fmt.Sprintf("%s.js", javascripts.JavaScriptActions[i].Name))
+					outFile, err := os.Create(filePath)
+					if err != nil {
+						cmd.PrintErr(fmt.Errorf("could not create output file for javascript %d for PDF %s: %w\n", i, args[0], err))
+						return
+					}
+
+					outFile.Write([]byte(javascripts.JavaScriptActions[i].Script))
+					outFile.Close()
+
+					cmd.Printf("Exported javascript %d into %s\n", i+1, filePath)
+				} else {
+					if i > 0 {
+						os.Stdout.WriteString("\n")
+						os.Stdout.WriteString(stdFileDelimiter)
+						os.Stdout.WriteString("\n")
+					}
+					os.Stdout.Write([]byte(javascripts.JavaScriptActions[i].Script))
 				}
-
-				outFile.Write([]byte(javascripts.JavaScriptActions[i].Script))
-				outFile.Close()
-
-				cmd.Printf("Exported javascript %d into %s\n", i+1, filePath)
 			}
 		}
 	},

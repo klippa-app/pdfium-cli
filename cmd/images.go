@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"path"
 	"strconv"
@@ -34,7 +35,7 @@ func init() {
 var imagesCmd = &cobra.Command{
 	Use:   "images [input] [output-folder]",
 	Short: "Extract the images of a PDF",
-	Long:  "Extract the images of a PDF and store them as file.\n[input] can either be a file path or - for stdin.",
+	Long:  "Extract the images of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\n[output-folder] can be either a folder or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err
@@ -44,13 +45,15 @@ var imagesCmd = &cobra.Command{
 			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
 		}
 
-		folderStat, err := os.Stat(args[1])
-		if err != nil {
-			return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
-		}
+		if args[1] != stdFilename {
+			folderStat, err := os.Stat(args[1])
+			if err != nil {
+				return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
+			}
 
-		if !folderStat.IsDir() {
-			return fmt.Errorf("output folder %s is not a folder\n", args[1])
+			if !folderStat.IsDir() {
+				return fmt.Errorf("output folder %s is not a folder\n", args[1])
+			}
 		}
 
 		return nil
@@ -90,6 +93,7 @@ var imagesCmd = &cobra.Command{
 		}
 
 		pages := strings.Split(*parsedPageRange, ",")
+		imageCount := 0
 		for _, page := range pages {
 			pageInt, _ := strconv.Atoi(page)
 			page, err := pdf.PdfiumInstance.FPDF_LoadPage(&requests.FPDF_LoadPage{
@@ -253,39 +257,59 @@ var imagesCmd = &cobra.Command{
 					}
 
 					filePath := path.Join(args[1], fmt.Sprintf("page-%d-image-%d.%s", pageInt, i+1, ext))
-					outFile, err := os.Create(filePath)
-					if err != nil {
-						closePageFunc()
-						closeBitmapFunc()
-						cmd.PrintErr(fmt.Errorf("could not create output file for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
-						return
-					}
 
-					if fileType == "png" {
-						err = png.Encode(outFile, img)
+					closeFunc := func() {}
+					var outWriter io.Writer
+					if args[1] != stdFilename {
+						outFile, err := os.Create(filePath)
 						if err != nil {
 							closePageFunc()
 							closeBitmapFunc()
+							cmd.PrintErr(fmt.Errorf("could not create output file for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+							return
+						}
+						outWriter = outFile
+						closeFunc = func() {
 							outFile.Close()
+						}
+					} else {
+						if imageCount > 0 {
+							os.Stdout.WriteString("\n")
+							os.Stdout.WriteString(stdFileDelimiter)
+							os.Stdout.WriteString("\n")
+						}
+						outWriter = os.Stdout
+					}
+
+					if fileType == "png" {
+						err = png.Encode(outWriter, img)
+						if err != nil {
+							closePageFunc()
+							closeBitmapFunc()
+							closeFunc()
 							return
 						}
 					} else {
 						var opt jpeg.Options
 						opt.Quality = jpegQuality
 
-						err = jpeg.Encode(outFile, img, &opt)
+						err = jpeg.Encode(outWriter, img, &opt)
 						if err != nil {
 							closePageFunc()
 							closeBitmapFunc()
-							outFile.Close()
+							closeFunc()
 							return
 						}
 					}
 
-					outFile.Close()
+					closeFunc()
 					closeBitmapFunc()
 
-					cmd.Printf("Exported image %d from page %d into %s\n", i+1, pageInt, filePath)
+					if args[1] != stdFilename {
+						cmd.Printf("Exported image %d from page %d into %s\n", i+1, pageInt, filePath)
+					}
+
+					imageCount++
 				}
 			}
 		}

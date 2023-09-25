@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"github.com/klippa-app/pdfium-cli/pdf"
 	"io"
 	"os"
@@ -14,12 +15,14 @@ import (
 
 var (
 	// Used for flags.
-	password string
-	pages    string
+	password         string
+	stdFileDelimiter string
+	pages            string
 )
 
 func addGenericPDFOptions(command *cobra.Command) {
-	command.Flags().StringVarP(&password, "password", "p", "", "Password on the input PDF file")
+	command.Flags().StringVarP(&password, "password", "p", "", "Password on the input PDF file(s).")
+	command.Flags().StringVarP(&stdFileDelimiter, "std-file-delimiter", "", "--pdfium-cli-file-boundary", "The delimiter to use when having multiple files in your input and/or output.")
 }
 
 func addPagesOption(intro string, command *cobra.Command) {
@@ -32,6 +35,9 @@ func isExperimentalError(err error) bool {
 
 const stdFilename = "-"
 
+var stdinDocuments [][]byte
+var stdinNoMoreFiles = errors.New("no more files on stdin")
+
 func openFile(filename string) (*responses.OpenDocument, func(), error) {
 	openDocumentRequest := &requests.OpenDocument{}
 
@@ -39,13 +45,27 @@ func openFile(filename string) (*responses.OpenDocument, func(), error) {
 
 	// Support opening file from stdin.
 	if filename == stdFilename {
+		if stdinDocuments == nil {
+			// @todo: possible improve this by reading up to the delimiter
+			//   for every document and not all at once.
+			readStdin, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			stdinDocuments = bytes.Split(readStdin, []byte("\n"+stdFileDelimiter+"\n"))
+		}
+
+		if len(stdinDocuments) == 0 {
+			return nil, nil, stdinNoMoreFiles
+		}
+
+		stdinDocument := stdinDocuments[len(stdinDocuments)-1]
+		stdinDocuments = stdinDocuments[:len(stdinDocuments)-1]
+
 		// For stdin we need to read the full thing because pdfium doesn't
 		// support streaming when it doesn't know the size of the file.
-		readStdin, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			return nil, nil, err
-		}
-		reader := bytes.NewReader(readStdin)
+		reader := bytes.NewReader(stdinDocument)
 		openDocumentRequest.FileReader = reader
 		openDocumentRequest.FileReaderSize = reader.Size()
 	} else {

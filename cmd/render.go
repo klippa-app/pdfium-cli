@@ -43,7 +43,7 @@ func init() {
 var renderCmd = &cobra.Command{
 	Use:   "render [input] [output]",
 	Short: "Render a PDF into images",
-	Long:  "Render a PDF into images.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout, stdout is only supported when the output will be one file. The output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. render invoice.pdf invoice-%d.jpg, the result for a 2-page PDF will be invoice-1.jpg and invoice-2.jpg.",
+	Long:  "Render a PDF into images.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout.  or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it. The output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. render invoice.pdf invoice-%d.jpg, the result for a 2-page PDF will be invoice-1.jpg and invoice-2.jpg.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return err
@@ -95,11 +95,6 @@ var renderCmd = &cobra.Command{
 		if len(splitPages) > 1 && !combinePages {
 			if args[1] != stdFilename && !strings.Contains(args[1], "%d") {
 				cmd.PrintErr(fmt.Errorf("output string %s should contain page pattern %%d\n", args[1]))
-				return
-			}
-
-			if args[1] == stdFilename {
-				cmd.PrintErr(fmt.Errorf("could not render into multiple files with output to stdout\n"))
 				return
 			}
 		}
@@ -181,7 +176,7 @@ var renderCmd = &cobra.Command{
 				}
 			}
 		} else {
-			for _, renderPage := range renderPages {
+			for i, renderPage := range renderPages {
 				page := strconv.Itoa(renderPage.ByIndex.Index + 1)
 				newFilePath := strings.Replace(args[1], "%d", page, -1)
 
@@ -230,6 +225,11 @@ var renderCmd = &cobra.Command{
 				if args[1] != stdFilename {
 					cmd.Printf("Rendered page %s into %s\n", page, newFilePath)
 				} else {
+					if i > 0 {
+						os.Stdout.WriteString("\n")
+						os.Stdout.WriteString(stdFileDelimiter)
+						os.Stdout.WriteString("\n")
+					}
 					_, err = os.Stdout.Write(*result.ImageBytes)
 					if err != nil {
 						cmd.PrintErr(fmt.Errorf("could not render page %s into image: %w\n", page, err))

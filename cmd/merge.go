@@ -21,13 +21,19 @@ var mergeCmd = &cobra.Command{
 	Short: "Merge multiple PDFs into a single PDF",
 	Long:  "Merge multiple PDFs into a single PDF.\n[output] can either be a file path or - for stdout.",
 	Args: func(cmd *cobra.Command, args []string) error {
-		if err := cobra.MinimumNArgs(3)(cmd, args); err != nil {
-			return err
-		}
+		if args[0] == stdFilename {
+			if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
+				return err
+			}
+		} else {
+			if err := cobra.MinimumNArgs(3)(cmd, args); err != nil {
+				return err
+			}
 
-		for i := 0; i < len(args)-1; i++ {
-			if _, err := os.Stat(args[i]); err != nil {
-				return fmt.Errorf("could not open input file %s: %w", args[0], err)
+			for i := 0; i < len(args)-1; i++ {
+				if _, err := os.Stat(args[i]); err != nil {
+					return fmt.Errorf("could not open input file %s: %w", args[0], err)
+				}
 			}
 		}
 
@@ -48,9 +54,25 @@ var mergeCmd = &cobra.Command{
 		}
 
 		mergedPageCount := 0
-		for i := 0; i < len(args)-1; i++ {
-			document, closeFile, err := openFile(args[i])
+		i := 0
+		for true {
+			var filename string
+			if args[0] == stdFilename {
+				filename = stdFilename
+			} else {
+				// Reached last file.
+				if i == len(args)-1 {
+					break
+				}
+				filename = args[i]
+			}
+
+			document, closeFile, err := openFile(filename)
 			if err != nil {
+				// Reached last stdin file.
+				if err == stdinNoMoreFiles {
+					break
+				}
 				cmd.PrintErr(fmt.Errorf("could not open input file %s: %w", args[i], err))
 				return
 			}
@@ -99,6 +121,7 @@ var mergeCmd = &cobra.Command{
 			}
 
 			closeFunc()
+			i++
 		}
 
 		var fileWriter io.Writer
