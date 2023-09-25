@@ -143,7 +143,7 @@ var mergeCmd = &cobra.Command{
 			FileWriter: fileWriter,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not save new document %s: %w", err))
+			cmd.PrintErr(fmt.Errorf("could not save new document: %w", err))
 			return
 		}
 
@@ -151,7 +151,7 @@ var mergeCmd = &cobra.Command{
 			Document: newDocument.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not save new document %s: %w", err))
+			cmd.PrintErr(fmt.Errorf("could not save new document: %w", err))
 			return
 		}
 	},
