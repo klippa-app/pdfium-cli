@@ -86,7 +86,7 @@ var imagesCmd = &cobra.Command{
 			pageRange = pages
 		}
 
-		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, false)
+		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange)
 		if err != nil {
 			handleError(cmd, fmt.Errorf("invalid page range '%s': %w\n", pageRange, err), ExitCodeInvalidPageRange)
 			return
