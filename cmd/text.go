@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/klippa-app/go-pdfium/responses"
 	"os"
 	"strconv"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/klippa-app/pdfium-cli/pdf"
 
 	"github.com/klippa-app/go-pdfium/requests"
+	"github.com/klippa-app/go-pdfium/responses"
 	"github.com/spf13/cobra"
 )
 
@@ -46,11 +46,11 @@ var textCmd = &cobra.Command{
 	Long:  "Get the text of a PDF in text or json.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout (default).",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
-			return err
+			return newExitCodeError(err, ExitCodeInvalidArguments)
 		}
 
 		if err := validFile(args[0]); err != nil {
-			return fmt.Errorf("could not open input file %s: %w", args[0], err)
+			return fmt.Errorf("could not open input file %s: %w", args[0], newExitCodeError(err, ExitCodeInvalidInput))
 		}
 
 		return nil
@@ -60,7 +60,7 @@ var textCmd = &cobra.Command{
 		if len(args) > 1 && args[1] != stdFilename {
 			createdFile, err := os.Create(args[1])
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not create file: %w", err))
+				handleError(cmd, fmt.Errorf("could not create file: %w", err), ExitCodeInvalidOutput)
 				return
 			}
 
@@ -70,14 +70,14 @@ var textCmd = &cobra.Command{
 
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
+			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[0], err), ExitCodeInvalidInput)
 			return
 		}
 
@@ -87,7 +87,7 @@ var textCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -98,7 +98,7 @@ var textCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange)
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("invalid page range '%s': %s\n", pageRange, err))
+			handleError(cmd, fmt.Errorf("invalid page range '%s': %w\n", pageRange, err), ExitCodeInvalidPageRange)
 			return
 		}
 
@@ -134,7 +134,7 @@ var textCmd = &cobra.Command{
 					PixelPositions:         pixelPositions,
 				})
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -150,7 +150,7 @@ var textCmd = &cobra.Command{
 					Page: textPages[i],
 				})
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 

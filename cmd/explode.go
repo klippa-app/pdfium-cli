@@ -25,15 +25,15 @@ var explodeCmd = &cobra.Command{
 	Long:  "Explode a PDF into multiple PDFs.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it. The output filename should contain a \"%d\" placeholder for the page number, e.g. split invoice.pdf invoice-%d.pdf, the result for a 2-page PDF will be invoice-1.pdf and invoice-2.pdf.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
-			return err
+			return newExitCodeError(err, ExitCodeInvalidArguments)
 		}
 
 		if err := validFile(args[0]); err != nil {
-			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
+			return fmt.Errorf("could not open input file %s: %w\n", args[0], newExitCodeError(err, ExitCodeInvalidOutput))
 		}
 
 		if args[1] != stdFilename && !strings.Contains(args[1], "%d") {
-			return fmt.Errorf("output string %s should contain page pattern %%d\n", args[1])
+			return newExitCodeError(fmt.Errorf("output string %s should contain page pattern %%d\n", args[1]), ExitCodeInvalidOutput)
 		}
 
 		return nil
@@ -41,14 +41,14 @@ var explodeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
+			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[0], err), ExitCodeInvalidInput)
 			return
 		}
 		defer closeFile()
@@ -57,7 +57,7 @@ var explodeCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -68,7 +68,7 @@ var explodeCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange)
 		if err != nil {
-			cmd.PrintErrf("invalid page range '%s': %s\n", pageRange, err)
+			handleError(cmd, fmt.Errorf("invalid page range '%s': %w\n", pageRange, err), ExitCodeInvalidPageRange)
 			return
 		}
 
@@ -77,7 +77,7 @@ var explodeCmd = &cobra.Command{
 		for i, page := range splitPages {
 			newDocument, err := pdf.PdfiumInstance.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not create new document for page %s: %w\n", page, err))
+				handleError(cmd, fmt.Errorf("could not create new document for page %s: %w\n", page, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -92,7 +92,7 @@ var explodeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErr(fmt.Errorf("could not import page %s into new document: %w\n", page, err))
+				handleError(cmd, fmt.Errorf("could not import page %s into new document: %w\n", page, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -109,7 +109,7 @@ var explodeCmd = &cobra.Command{
 			} else {
 				createdFile, err := os.Create(newFilePath)
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not save document for page %s: %w\n", page, err))
+					handleError(cmd, fmt.Errorf("could not save document for page %s: %w\n", page, err), ExitCodeInvalidOutput)
 					return
 				}
 				fileWriter = createdFile
@@ -126,7 +126,7 @@ var explodeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				cmd.PrintErr(fmt.Errorf("could not save document for page %s: %w\n", page, err))
+				handleError(cmd, fmt.Errorf("could not save document for page %s: %w\n", page, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 

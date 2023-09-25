@@ -1,7 +1,19 @@
 package main
 
-import "github.com/klippa-app/pdfium-cli/cmd"
+import (
+	"errors"
+	"github.com/klippa-app/pdfium-cli/cmd"
+	"os"
+)
 
 func main() {
-	cmd.Execute()
+	err := cmd.Execute()
+	if err != nil {
+		exitCodeError := &cmd.ExitCodeError{}
+		if errors.As(err, &exitCodeError) {
+			os.Exit(exitCodeError.ExitCode())
+		} else {
+			os.Exit(cmd.ExitCodeInvalidArguments)
+		}
+	}
 }

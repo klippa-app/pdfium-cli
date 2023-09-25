@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/klippa-app/go-pdfium/enums"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/klippa-app/pdfium-cli/pdf"
 
+	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/spf13/cobra"
 )
@@ -38,21 +38,21 @@ var imagesCmd = &cobra.Command{
 	Long:  "Extract the images of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\n[output-folder] can be either a folder or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
-			return err
+			return newExitCodeError(err, ExitCodeInvalidArguments)
 		}
 
 		if err := validFile(args[0]); err != nil {
-			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
+			return fmt.Errorf("could not open input file %s: %w\n", args[0], newExitCodeError(err, ExitCodeInvalidInput))
 		}
 
 		if args[1] != stdFilename {
 			folderStat, err := os.Stat(args[1])
 			if err != nil {
-				return fmt.Errorf("could not open output folder %s: %w\n", args[1], err)
+				return fmt.Errorf("could not open output folder %s: %w\n", args[1], newExitCodeError(err, ExitCodeInvalidOutput))
 			}
 
 			if !folderStat.IsDir() {
-				return fmt.Errorf("output folder %s is not a folder\n", args[1])
+				return newExitCodeError(fmt.Errorf("output folder %s is not a folder\n", args[1]), ExitCodeInvalidOutput)
 			}
 		}
 
@@ -61,14 +61,14 @@ var imagesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
+			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[0], err), ExitCodeInvalidInput)
 			return
 		}
 		defer closeFile()
@@ -77,7 +77,7 @@ var imagesCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -88,7 +88,7 @@ var imagesCmd = &cobra.Command{
 
 		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange)
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("invalid page range '%s': %s\n", pageRange, err))
+			handleError(cmd, fmt.Errorf("invalid page range '%s': %w\n", pageRange, err), ExitCodeInvalidPageRange)
 			return
 		}
 
@@ -102,7 +102,7 @@ var imagesCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not load page for page %d for PDF %s: %w\n", pageInt, args[0], err))
+				handleError(cmd, fmt.Errorf("could not load page for page %d for PDF %s: %w\n", pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -120,7 +120,7 @@ var imagesCmd = &cobra.Command{
 
 			if err != nil {
 				closePageFunc()
-				cmd.PrintErr(fmt.Errorf("could not get object count for page %d for PDF %s: %w\n", pageInt, args[0], err))
+				handleError(cmd, fmt.Errorf("could not get object count for page %d for PDF %s: %w\n", pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -134,7 +134,7 @@ var imagesCmd = &cobra.Command{
 
 				if err != nil {
 					closePageFunc()
-					cmd.PrintErr(fmt.Errorf("could not get object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -144,7 +144,7 @@ var imagesCmd = &cobra.Command{
 
 				if err != nil {
 					closePageFunc()
-					cmd.PrintErr(fmt.Errorf("could not get object type for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get object type for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -159,7 +159,7 @@ var imagesCmd = &cobra.Command{
 
 					if err != nil {
 						closePageFunc()
-						cmd.PrintErr(fmt.Errorf("could not get image for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+						handleError(cmd, fmt.Errorf("could not get image for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 						return
 					}
 
@@ -176,7 +176,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErr(fmt.Errorf("could not get image stride for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+						handleError(cmd, fmt.Errorf("could not get image stride for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 						return
 					}
 
@@ -187,7 +187,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErr(fmt.Errorf("could not get image width for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+						handleError(cmd, fmt.Errorf("could not get image width for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 						return
 					}
 
@@ -198,7 +198,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErr(fmt.Errorf("could not get image height for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+						handleError(cmd, fmt.Errorf("could not get image height for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 						return
 					}
 
@@ -209,7 +209,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErr(fmt.Errorf("could not get image format for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+						handleError(cmd, fmt.Errorf("could not get image format for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 						return
 					}
 
@@ -220,7 +220,7 @@ var imagesCmd = &cobra.Command{
 					if err != nil {
 						closePageFunc()
 						closeBitmapFunc()
-						cmd.PrintErr(fmt.Errorf("could not get image buffer for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+						handleError(cmd, fmt.Errorf("could not get image buffer for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 						return
 					}
 
@@ -265,7 +265,7 @@ var imagesCmd = &cobra.Command{
 						if err != nil {
 							closePageFunc()
 							closeBitmapFunc()
-							cmd.PrintErr(fmt.Errorf("could not create output file for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err))
+							handleError(cmd, fmt.Errorf("could not create output file for object %d for page %d for PDF %s: %w\n", i, pageInt, args[0], err), ExitCodeInvalidOutput)
 							return
 						}
 						outWriter = outFile

@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/klippa-app/pdfium-cli/pdf"
+
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
-
-	"github.com/klippa-app/pdfium-cli/pdf"
 	"github.com/spf13/cobra"
 )
 
@@ -25,11 +25,11 @@ var infoCmd = &cobra.Command{
 	Long:  "Get the information of a PDF and its pages, like metadata and page size.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout (default).",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
-			return err
+			return newExitCodeError(err, ExitCodeInvalidArguments)
 		}
 
 		if err := validFile(args[0]); err != nil {
-			return fmt.Errorf("could not open input file %s: %w\n", args[0], err)
+			return fmt.Errorf("could not open input file %s: %w\n", args[0], newExitCodeError(err, ExitCodeInvalidInput))
 		}
 
 		return nil
@@ -39,7 +39,7 @@ var infoCmd = &cobra.Command{
 		if len(args) > 1 && args[1] != stdFilename {
 			createdFile, err := os.Create(args[1])
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not create file: %w", err))
+				handleError(cmd, fmt.Errorf("could not create file: %w", err), ExitCodeInvalidOutput)
 				return
 			}
 
@@ -49,14 +49,14 @@ var infoCmd = &cobra.Command{
 
 		err := pdf.LoadPdfium()
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
+			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 		defer pdf.ClosePdfium()
 
 		document, closeFile, err := openFile(args[0])
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not open input file %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[0], err), ExitCodeInvalidInput)
 			return
 		}
 
@@ -68,7 +68,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get version for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get version for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -133,7 +133,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get page count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -149,7 +149,7 @@ var infoCmd = &cobra.Command{
 				},
 			})
 			if err != nil {
-				cmd.PrintErr(fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], err))
+				handleError(cmd, fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -174,7 +174,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get permissions for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get permissions for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -184,7 +184,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get security handler revision for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get security handler revision for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
@@ -200,7 +200,7 @@ var infoCmd = &cobra.Command{
 					Count: 0,
 				}
 			} else {
-				cmd.PrintErr(fmt.Errorf("could not get signature count for PDF %s: %w\n", args[0], err))
+				handleError(cmd, fmt.Errorf("could not get signature count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 		}
@@ -212,7 +212,7 @@ var infoCmd = &cobra.Command{
 					Index:    i,
 				})
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not get signature object %d for PDF %s: %w\n", i, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get signature object %d for PDF %s: %w\n", i, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -220,7 +220,7 @@ var infoCmd = &cobra.Command{
 					Signature: signatureObj.Signature,
 				})
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -228,7 +228,7 @@ var infoCmd = &cobra.Command{
 					Signature: signatureObj.Signature,
 				})
 				if err != nil {
-					cmd.PrintErr(fmt.Errorf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], err))
+					handleError(cmd, fmt.Errorf("could not get signature reason for signature object %d for PDF %s: %w\n", i, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
 
@@ -243,7 +243,7 @@ var infoCmd = &cobra.Command{
 			Document: document.Document,
 		})
 		if err != nil {
-			cmd.PrintErr(fmt.Errorf("could not get signature count for PDF %s: %w\n", args[0], err))
+			handleError(cmd, fmt.Errorf("could not get signature count for PDF %s: %w\n", args[0], newPdfiumError(err)), ExitCodePdfiumError)
 			return
 		}
 
