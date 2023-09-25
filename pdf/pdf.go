@@ -27,7 +27,7 @@ func ClosePdfium() {
 // supports simple instructions like 1-5 or just a page number. This method
 // can automatically calculate ends and reverse pages for example.
 // This way we can also properly validate page ranges.
-func NormalizePageRange(pageCount int, pageRange string, allowDuplicates bool) (*string, *int, error) {
+func NormalizePageRange(pageCount int, pageRange string) (*string, *int, error) {
 	calculatedPageCount := 0
 	var calculatedPageNumbers []string
 	seenPageNumbers := map[int]bool{}
@@ -42,22 +42,8 @@ func NormalizePageRange(pageCount int, pageRange string, allowDuplicates bool) (
 		var pageNumbers []int
 		for pageRangePartI := range pageRangeParts {
 			if pageRangeParts[pageRangePartI] == "first" {
-				if !allowDuplicates {
-					if _, ok := seenPageNumbers[1]; ok {
-						continue
-					}
-				}
-
-				seenPageNumbers[1] = true
 				pageNumbers = append(pageNumbers, 1)
 			} else if pageRangeParts[pageRangePartI] == "last" {
-				if !allowDuplicates {
-					if _, ok := seenPageNumbers[pageCount]; ok {
-						continue
-					}
-				}
-
-				seenPageNumbers[pageCount] = true
 				pageNumbers = append(pageNumbers, pageCount)
 			} else if strings.HasPrefix(pageRangeParts[pageRangePartI], "r") {
 				parsedPageNumber, err := strconv.Atoi(strings.TrimPrefix(pageRangeParts[pageRangePartI], "r"))
@@ -66,16 +52,9 @@ func NormalizePageRange(pageCount int, pageRange string, allowDuplicates bool) (
 				}
 
 				if pageCount-parsedPageNumber < 1 || pageCount-parsedPageNumber > pageCount {
-					return nil, nil, fmt.Errorf("%s is not a valid page number, the document has %d page(s)", strings.TrimPrefix(pageRangeParts[pageRangePartI], "r"), pageCount)
+					return nil, nil, fmt.Errorf("%d is not a valid page number, the document has %d page(s)", pageCount-parsedPageNumber, pageCount)
 				}
 
-				if !allowDuplicates {
-					if _, ok := seenPageNumbers[pageCount-parsedPageNumber]; ok {
-						continue
-					}
-				}
-
-				seenPageNumbers[pageCount-parsedPageNumber] = true
 				pageNumbers = append(pageNumbers, pageCount-parsedPageNumber)
 			} else {
 				parsedPageNumber, err := strconv.Atoi(pageRangeParts[pageRangePartI])
@@ -87,13 +66,6 @@ func NormalizePageRange(pageCount int, pageRange string, allowDuplicates bool) (
 					return nil, nil, fmt.Errorf("%s is not a valid page number, the document has %d page(s)", pageRangeParts[pageRangePartI], pageCount)
 				}
 
-				if !allowDuplicates {
-					if _, ok := seenPageNumbers[parsedPageNumber]; ok {
-						continue
-					}
-				}
-
-				seenPageNumbers[parsedPageNumber] = true
 				pageNumbers = append(pageNumbers, parsedPageNumber)
 			}
 		}
@@ -101,12 +73,20 @@ func NormalizePageRange(pageCount int, pageRange string, allowDuplicates bool) (
 		if len(pageNumbers) == 0 {
 			continue
 		} else if len(pageNumbers) == 1 {
-			// Only 1 page number.
-			calculatedPageNumbers = append(calculatedPageNumbers, strconv.Itoa(pageNumbers[0]))
+			_, seen := seenPageNumbers[pageNumbers[0]]
+			if !seen {
+				// Only 1 page number.
+				seenPageNumbers[pageNumbers[0]] = true
+				calculatedPageNumbers = append(calculatedPageNumbers, strconv.Itoa(pageNumbers[0]))
+			}
 		} else {
 			// A page range, a start and end number. Tokens should be replaced by earlier logic.
 			for i := pageNumbers[0]; i <= pageNumbers[1]; i++ {
-				calculatedPageNumbers = append(calculatedPageNumbers, strconv.Itoa(i))
+				_, seen := seenPageNumbers[i]
+				if !seen {
+					seenPageNumbers[i] = true
+					calculatedPageNumbers = append(calculatedPageNumbers, strconv.Itoa(i))
+				}
 			}
 		}
 	}
