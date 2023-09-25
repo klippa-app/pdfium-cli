@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/klippa-app/pdfium-cli/version"
 
 	"github.com/spf13/cobra"
@@ -20,6 +22,7 @@ var (
 
 // Execute executes the root command.
 func Execute() error {
+	rootCmd.SetOut(os.Stdout)
 	return rootCmd.Execute()
 }
 
