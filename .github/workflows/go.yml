@@ -64,7 +64,7 @@ jobs:
           sudo curl -L https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F${{ env.PDFIUM_VERSION }}/pdfium-mac-x64.tgz -o pdfium-mac-x64.tgz && sudo mkdir /opt/pdfium && sudo tar -C /opt/pdfium -xvf pdfium-mac-x64.tgz
           sudo rm pdfium-mac-x64.tgz
           sudo cp ./.github/workflows/pdfium.pc /usr/local/lib/pkgconfig/pdfium.pc
-          sudo brew install jpeg-turbo
+          brew install jpeg-turbo
 
       - name: Set up PDFium library and libjpeg-turbo (Windows)
         if: matrix.os == 'windows-latest'
