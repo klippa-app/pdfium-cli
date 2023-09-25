@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/klippa-app/go-pdfium/requests"
@@ -19,11 +20,11 @@ func init() {
 }
 
 var infoCmd = &cobra.Command{
-	Use:   "info [input]",
+	Use:   "info [input] [output]",
 	Short: "Get the information of a PDF",
-	Long:  "Get the information of a PDF and its pages, like metadata and page size.",
+	Long:  "Get the information of a PDF and its pages, like metadata and page size.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout (default).",
 	Args: func(cmd *cobra.Command, args []string) error {
-		if err := cobra.ExactArgs(1)(cmd, args); err != nil {
+		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
 			return err
 		}
 
@@ -34,6 +35,18 @@ var infoCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		// Second argument is the output file.
+		if len(args) > 1 && args[1] != stdFilename {
+			createdFile, err := os.Create(args[1])
+			if err != nil {
+				cmd.PrintErr(fmt.Errorf("could not create file: %w", err))
+				return
+			}
+
+			defer createdFile.Close()
+			cmd.SetOut(createdFile)
+		}
+
 		err := pdf.LoadPdfium()
 		if err != nil {
 			cmd.PrintErr(fmt.Errorf("could not load pdfium: %w\n", err))
