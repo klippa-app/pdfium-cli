@@ -121,10 +121,12 @@ jobs:
           rm pdfium-win-x64.tgz
           mkdir D:\opt\pkgconfig
           cp ./.github/workflows/pdfium-windows.pc D:\opt\pkgconfig\pdfium.pc
-          curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.0/libjpeg-turbo-3.0.0-gcc64.exe -o libjpeg-turbo-3.0.0-gcc64.exe
+          curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.0/libjpeg-turbo-3.0.0-gcc64.exe -o D:\opt\libjpeg-turbo-3.0.0-gcc64.exe
 
       - name: Install jpeg-turbo
-        run: ./libjpeg-turbo-3.0.0-gcc64.exe
+        run: |
+          cd D:\opt
+          ./libjpeg-turbo-3.0.0-gcc64.exe /Install
 
       - name: Test
         run: |
