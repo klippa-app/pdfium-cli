@@ -104,6 +104,7 @@ jobs:
   test-cgo-windows:
     env:
       CGO_ENABLED: 1
+      CGO_CFLAGS: "C:\libjpeg-turbo-gcc64"
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
