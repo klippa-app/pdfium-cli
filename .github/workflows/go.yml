@@ -105,6 +105,7 @@ jobs:
     env:
       CGO_ENABLED: 1
       CGO_CFLAGS: "-IC:\\libjpeg-turbo-gcc64\\include -LC:\\libjpeg-turbo-gcc64\\bin"
+      CGO_LDFLAGS: "-LC:\\libjpeg-turbo-gcc64\\bin"
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
