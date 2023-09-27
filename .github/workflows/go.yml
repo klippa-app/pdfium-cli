@@ -56,10 +56,12 @@ jobs:
           sudo rm pdfium-linux-musl-x64.tgz
           sudo cp ./.github/workflows/pdfium.pc /usr/lib/pkgconfig/pdfium.pc
           sudo apt-get update -y
-          sudo apt-get install -y pkg-config musl-dev musl-tools libturbojpeg libturbojpeg-dev
+          sudo apt-get install -y musl-dev musl-tools libturbojpeg libturbojpeg-dev
 
       - name: Test Linux
         run: |
+          find /usr | grep turbo | grep jpeg
+          find /var | grep turbo | grep jpeg
           export LD_LIBRARY_PATH="/opt/pdfium/lib"
           go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
 
