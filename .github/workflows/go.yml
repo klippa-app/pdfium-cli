@@ -60,7 +60,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y musl-dev musl-tools
           sudo curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.0/libjpeg-turbo-3.0.0.tar.gz -o libjpeg-turbo-3.0.0.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.0.tar.gz
-          sudo cd /opt/libjpegturbo && sudo mkdir build && sudo cd build
+          cd /opt/libjpegturbo && sudo mkdir build && cd build
           sudo cmake -G"Unix Makefiles" -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None ../
           sudo make turbojpeg
 
