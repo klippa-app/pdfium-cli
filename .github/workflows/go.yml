@@ -129,6 +129,8 @@ jobs:
 
       - name: Test
         run: |
+          ls "C:\libjpeg-turbo-gcc64"
+          env
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
           go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
@@ -137,5 +139,4 @@ jobs:
         run: |
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
-          ls "C:\libjpeg-turbo-gcc64"
           go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
