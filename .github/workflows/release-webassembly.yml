@@ -1,4 +1,4 @@
-name: Release binaries
+name: Release WebAssembly binaries
 
 on:
   release:
@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-20.04, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
         go: [ "1.21" ]
     runs-on: ${{ matrix.os }}
     env:
