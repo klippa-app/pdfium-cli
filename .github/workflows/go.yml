@@ -40,6 +40,7 @@ jobs:
   test-cgo-linux:
     env:
       CGO_ENABLED: 1
+      LD_LIBRARY_PATH: "/opt/pdfium/lib"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
