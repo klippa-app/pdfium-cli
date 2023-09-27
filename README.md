@@ -38,7 +38,7 @@ Download the binary from the latest release for your platform and save it as `pd
 You can also use the `install` tool for this:
 
 ```bash
-sudo install pdfium-linux-x64 /usr/local/bin/pdfium
+sudo install pdfium-webassembly-linux-x64 /usr/local/bin/pdfium
 ```
 
 #### Release types
