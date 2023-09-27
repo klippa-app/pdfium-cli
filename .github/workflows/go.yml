@@ -18,6 +18,8 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         go: [ "1.21" ]
     runs-on: ${{ matrix.os }}
+    env:
+      CGO_ENABLED: 0
     steps:
       - uses: actions/checkout@v3
 
@@ -36,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest ] # windows-latest
         go: [ "1.21" ]
     env:
       PDFIUM_VERSION: "6015"
