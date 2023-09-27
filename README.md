@@ -41,6 +41,32 @@ You can also use the `install` tool for this:
 sudo install pdfium-linux-x64 /usr/local/bin/pdfium
 ```
 
+#### Release types
+
+The following release types are available:
+
+- Linux
+  - WebAssembly
+  - Native
+  - Native + MUSL
+- MacOS
+  - WebAssembly
+  - Native
+- Windows
+  - WebAssembly
+  - Native
+
+
+**WebAssembly**: this is a single binary that includes everything that you need to run pdfium-cli, but is a lot slower
+than native due to the WebAssembly runtime. Most useful if speed is not a concern and easy distribution is more 
+important.
+
+**Native**: A native build that requires [pdfium](https://github.com/bblanchon/pdfium-binaries) and
+[libjpeg-turbo](https://libjpeg-turbo.org/) to be available on your system.
+
+**Native + MUSL**: Same as native but built with MUSL so that it does not require a system libc which allows it to be
+used in Alpine Docker containers.
+
 ### From source
 
 Make sure you have a working Go development environment.
@@ -97,6 +123,12 @@ Flags:
 
 Use "pdfium [command] --help" for more information about a command.
 ```
+
+The following build tags are available to control different build types:
+
+ - pdfium_cli_use_cgo: whether to compile the native CGO version (faster, but requires [pdfium](https://github.com/bblanchon/pdfium-binaries) to be installed).
+ - pdfium_experimental: whether to enable experimental features of pdfium in the build.
+ - pdfium_use_turbojpeg: whether to enable [libjpeg-turbo](https://libjpeg-turbo.org/) support, which speeds up jpeg compression a lot compared to the default jpeg encoding in Go.
 
 ## About Klippa
 
