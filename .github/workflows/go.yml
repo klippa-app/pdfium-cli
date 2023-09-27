@@ -66,11 +66,11 @@ jobs:
 
       - name: Test Linux
         run: |
-          go test ./... --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
+          go test ./... --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.0/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
 
       - name: Build
         run: |
-          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
+          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.0/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
 
   test-cgo-macos:
     env:
