@@ -41,8 +41,8 @@ jobs:
     env:
       CGO_ENABLED: 1
       CC: "musl-gcc"
-      CGO_CFLAGS: "-I/opt/libjpegturbo"
-      LD_LIBRARY_PATH: "/opt/pdfium/lib:/opt/libjpegturbo/build"
+      CGO_CFLAGS: "-I/opt/libjpegturbo/libjpeg-turbo-3.0.0"
+      LD_LIBRARY_PATH: "/opt/pdfium/lib:/opt/libjpegturbo/libjpeg-turbo-3.0.0/build"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -60,8 +60,8 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y musl-dev musl-tools
           sudo curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.0/libjpeg-turbo-3.0.0.tar.gz -o libjpeg-turbo-3.0.0.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.0.tar.gz
-          cd /opt/libjpegturbo && sudo mkdir build && cd build
-          sudo cmake -G"Unix Makefiles" -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None "../"
+          cd /opt/libjpegturbo/libjpeg-turbo-3.0.0 && sudo mkdir build && cd build
+          sudo cmake -G"Unix Makefiles" -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None ../
           sudo make turbojpeg
 
       - name: Test Linux
