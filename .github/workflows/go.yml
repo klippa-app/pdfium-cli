@@ -104,7 +104,7 @@ jobs:
   test-cgo-windows:
     env:
       CGO_ENABLED: 1
-      CGO_CFLAGS: "-IC:\\libjpeg-turbo-gcc64"
+      CGO_CFLAGS: "-IC:\\libjpeg-turbo-gcc64\include"
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -125,12 +125,10 @@ jobs:
           curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.0/libjpeg-turbo-3.0.0-gcc64.exe -o libjpeg-turbo-3.0.0-gcc64.exe
 
       - name: Install jpeg-turbo
-        run: ./libjpeg-turbo-3.0.0-gcc64.exe /Install
+        run: ./libjpeg-turbo-3.0.0-gcc64.exe /S
 
       - name: Test
         run: |
-          ls "C:\libjpeg-turbo-gcc64"
-          env
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
           go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
