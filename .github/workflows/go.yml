@@ -41,6 +41,8 @@ jobs:
     env:
       CGO_ENABLED: 1
       CC: "musl-gcc"
+      CGO_CFLAGS: "-I/opt/libturbojpeg -L/usr/lib/x86_64-linux-gnu"
+      LD_LIBRARY_PATH: "/opt/pdfium/lib;/usr/lib/x86_64-linux-gnu"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -57,17 +59,14 @@ jobs:
           sudo cp ./.github/workflows/pdfium.pc /usr/lib/pkgconfig/pdfium.pc
           sudo apt-get update -y
           sudo apt-get install -y musl-dev musl-tools libturbojpeg libturbojpeg-dev
-
+          sudo mkdir /opt/libturbojpeg
+          sudo cp /usr/include/turbojpeg.h /opt/libturbojpeg
       - name: Test Linux
         run: |
-          find /usr | grep turbo | grep jpeg
-          find /var | grep turbo | grep jpeg
-          export LD_LIBRARY_PATH="/opt/pdfium/lib"
           go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
 
       - name: Build
         run: |
-          export LD_LIBRARY_PATH="/opt/pdfium/lib"
           go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
 
   test-cgo-macos:
