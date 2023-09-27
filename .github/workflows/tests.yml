@@ -157,6 +157,11 @@ jobs:
       - name: Install jpeg-turbo
         run: ./libjpeg-turbo-3.0.0-gcc64.exe /S
 
+      - uses: GuillaumeFalourd/wait-sleep-action@v1
+        name: Wait for jpeg-turbo silent install
+        with:
+          time: '60'
+
       - name: Test
         run: |
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
