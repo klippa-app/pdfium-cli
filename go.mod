@@ -3,17 +3,16 @@ module github.com/klippa-app/pdfium-cli
 go 1.21
 
 require (
-	github.com/klippa-app/go-pdfium v1.8.1
+	github.com/klippa-app/go-pdfium v1.8.2
 	github.com/spf13/cobra v1.7.0
 )
 
 require (
-	github.com/bmharper/turbo v1.0.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/hashicorp/go-hclog v1.5.0 // indirect
-	github.com/hashicorp/go-plugin v1.5.1 // indirect
+	github.com/hashicorp/go-plugin v1.5.2 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect

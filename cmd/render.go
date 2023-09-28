@@ -22,6 +22,7 @@ var (
 	maxHeight    int
 	padding      int
 	quality      int
+	progressive  bool
 )
 
 func init() {
@@ -36,6 +37,7 @@ func init() {
 	renderCmd.Flags().IntVarP(&maxHeight, "max-height", "", 0, "The maximum height of the resulting image, this will disable the DPI option. The aspect ratio will be kept. When only the height is given, the width will be calculated automatically.")
 	renderCmd.Flags().IntVarP(&padding, "padding", "", 0, "The padding in pixels between pages when combining pages.")
 	renderCmd.Flags().IntVarP(&quality, "quality", "", 95, "The quality to render the image in, only used for jpeg. The option max-file-size may lower this if necessary.")
+	renderCmd.Flags().BoolVarP(&progressive, "progressive", "", false, "Create progressive images, only used for jpeg.")
 
 	rootCmd.AddCommand(renderCmd)
 }
@@ -124,6 +126,7 @@ var renderCmd = &cobra.Command{
 				OutputFormat:  outputFormat,
 				MaxFileSize:   maxFileSize,
 				OutputQuality: quality,
+				Progressive:   progressive,
 			}
 
 			if args[1] == stdFilename {
@@ -184,6 +187,7 @@ var renderCmd = &cobra.Command{
 					OutputFormat:  outputFormat,
 					MaxFileSize:   maxFileSize,
 					OutputQuality: quality,
+					Progressive:   progressive,
 				}
 
 				if args[1] == stdFilename {
