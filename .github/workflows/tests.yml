@@ -12,7 +12,7 @@ on:
 
 env:
   GO_VERSION: "1.21"
-  PDFIUM_VERSION: "6015"
+  PDFIUM_VERSION: "6029"
 
 jobs:
   test-webassembly:
@@ -133,8 +133,6 @@ jobs:
   test-cgo-windows:
     env:
       CGO_ENABLED: 1
-      CGO_CFLAGS: "-IC:\\libjpeg-turbo-gcc64\\include -LC:\\libjpeg-turbo-gcc64\\bin"
-      CGO_LDFLAGS: "-LC:\\libjpeg-turbo-gcc64\\bin"
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -153,23 +151,21 @@ jobs:
           mkdir D:\opt\pkgconfig
           cp ./.github/workflows/pdfium-windows.pc D:\opt\pkgconfig\pdfium.pc
           curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.0/libjpeg-turbo-3.0.0-gcc64.exe -o libjpeg-turbo-3.0.0-gcc64.exe
-
-      - name: Install jpeg-turbo
-        run: ./libjpeg-turbo-3.0.0-gcc64.exe /S
-
-      - uses: GuillaumeFalourd/wait-sleep-action@v1
-        name: Wait for jpeg-turbo silent install
-        with:
-          time: '60'
+          ./libjpeg-turbo-3.0.0-gcc64.exe /S
+          $Folder = 'C:\libjpeg-turbo-gcc64\lib\pkgconfig'
+          while (!(Test-Path -Path $Folder)) {
+            "libjpeg-turbo does not exist yet!"
+            Start-Sleep -s 5
+          }
 
       - name: Test
         run: |
-          $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
+          $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig:C:\libjpeg-turbo-gcc64\lib\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
           go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
 
       - name: Build
         run: |
-          $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig'
+          $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig:C:\libjpeg-turbo-gcc64\lib\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
           go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go

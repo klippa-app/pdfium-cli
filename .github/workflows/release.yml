@@ -6,7 +6,7 @@ on:
 
 env:
   GO_VERSION: "1.21"
-  PDFIUM_VERSION: "6015"
+  PDFIUM_VERSION: "6029"
 
 jobs:
   release-webassembly:
