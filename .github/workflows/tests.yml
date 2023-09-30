@@ -1,15 +1,21 @@
-name: Release binaries
+name: Go tests
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+      - development
+  pull_request:
+    branches:
+      - main
+      - development
 
 env:
   GO_VERSION: "1.21"
   PDFIUM_VERSION: "6029"
 
 jobs:
-  release-webassembly:
+  test-webassembly:
     strategy:
       fail-fast: false
       matrix:
@@ -24,30 +30,14 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: Build Linux
-        if: matrix.os == 'ubuntu-latest'
+      - name: Run tests
         run: |
-          GOARCH=amd64 go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-linux-amd64 main.go
-          GOARCH=arm64 go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-linux-arm64 main.go
-      - name: Build MacOS
-        if: matrix.os == 'macos-latest'
+          go test ./... -v
+      - name: Test build
         run: |
-          GOARCH=amd64 go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-mac-amd64 main.go
-          GOARCH=arm64 go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-mac-arm64 main.go
-      - name: Build Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          GOARCH=amd64 go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-windows-amd64 main.go
-      - uses: actions/upload-artifact@v3
-        with:
-          name: builds
-          path: artifacts
-      - uses: AButler/upload-release-assets@v2.0
-        with:
-          files: 'artifacts/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          go build main.go
 
-  release-cgo-linux:
+  test-cgo-linux:
     env:
       CGO_ENABLED: 1
       LD_LIBRARY_PATH: "/opt/pdfium/lib"
@@ -68,21 +58,15 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y libturbojpeg libturbojpeg-dev
 
+      - name: Test Linux
+        run: |
+          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
+
       - name: Build
         run: |
-          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-linux-amd64 main.go
+          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: builds
-          path: artifacts
-
-      - uses: AButler/upload-release-assets@v2.0
-        with:
-          files: 'artifacts/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  release-cgo-linux-musl:
+  test-cgo-linux-musl:
     env:
       CGO_ENABLED: 1
       CC: "musl-gcc"
@@ -109,22 +93,15 @@ jobs:
           sudo cmake -G"Unix Makefiles" -DCMAKE_C_COMPILER=musl-gcc -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None ../
           sudo make turbojpeg
 
+      - name: Test Linux
+        run: |
+          go test ./... --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.0/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
+
       - name: Build
         run: |
-          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.0/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-linux-musl-amd64 main.go
+          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.0/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: builds
-          path: artifacts
-
-      - uses: AButler/upload-release-assets@v2.0
-        with:
-          files: 'artifacts/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-
-  release-cgo-macos:
+  test-cgo-macos:
     env:
       CGO_ENABLED: 1
     runs-on: macos-latest
@@ -143,22 +120,17 @@ jobs:
           sudo cp ./.github/workflows/pdfium.pc /usr/local/lib/pkgconfig/pdfium.pc
           brew install jpeg-turbo
 
+      - name: Test
+        run: |
+          export LD_LIBRARY_PATH="/opt/pdfium/lib"
+          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -exec "env DYLD_LIBRARY_PATH=/opt/pdfium/lib" -v
+
       - name: Build
         run: |
           export LD_LIBRARY_PATH="/opt/pdfium/lib"
-          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-mac-amd64 main.go
+          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: builds
-          path: artifacts
-
-      - uses: AButler/upload-release-assets@v2.0
-        with:
-          files: 'artifacts/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  release-cgo-windows:
+  test-cgo-windows:
     env:
       CGO_ENABLED: 1
     runs-on: windows-latest
@@ -186,18 +158,14 @@ jobs:
             Start-Sleep -s 5
           }
 
+      - name: Test
+        run: |
+          $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig;C:\libjpeg-turbo-gcc64\lib\pkgconfig'
+          $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
+          go test ./... -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -v
+
       - name: Build
         run: |
           $env:PKG_CONFIG_PATH = 'D:\opt\pkgconfig;C:\libjpeg-turbo-gcc64\lib\pkgconfig'
           $env:Path += ";D:\opt\pdfium\bin;C:\libjpeg-turbo-gcc64\bin"
-          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-windows-amd64 main.go
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: builds
-          path: artifacts
-
-      - uses: AButler/upload-release-assets@v2.0
-        with:
-          files: 'artifacts/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg main.go
