@@ -37,7 +37,8 @@ jobs:
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |
-          GOARCH=amd64 go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-windows-amd64 main.go
+          $env:GOARCH = 'amd64'
+          go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-windows-amd64 main.go
       - uses: actions/upload-artifact@v3
         with:
           name: builds
