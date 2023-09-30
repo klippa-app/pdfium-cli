@@ -46,15 +46,15 @@ sudo install pdfium-webassembly-linux-x64 /usr/local/bin/pdfium
 The following release types are available:
 
 - Linux
-  - WebAssembly
-  - Native
-  - Native + MUSL
+  - WebAssembly (amd64 + arm64)
+  - Native (amd64)
+  - Native + MUSL (amd64)
 - MacOS
-  - WebAssembly
-  - Native
+  - WebAssembly (amd64 + arm64)
+  - Native (amd64)
 - Windows
-  - WebAssembly
-  - Native
+  - WebAssembly (amd64)
+  - Native (amd64)
 
 
 **WebAssembly**: this is a single binary that includes everything that you need to run pdfium-cli, but is a lot slower
