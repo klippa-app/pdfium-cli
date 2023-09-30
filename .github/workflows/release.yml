@@ -3,14 +3,6 @@ name: Release binaries
 on:
   release:
     types: [created]
-  push:
-    branches:
-      - main
-      - development
-  pull_request:
-    branches:
-      - main
-      - development
 
 env:
   GO_VERSION: "1.21"
