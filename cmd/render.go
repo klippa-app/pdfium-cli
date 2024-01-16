@@ -8,21 +8,23 @@ import (
 
 	"github.com/klippa-app/pdfium-cli/pdf"
 
+	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/spf13/cobra"
 )
 
 var (
 	// Used for flags.
-	dpi          int
-	fileType     string
-	maxFileSize  int64
-	combinePages bool
-	maxWidth     int
-	maxHeight    int
-	padding      int
-	quality      int
-	progressive  bool
+	dpi               int
+	fileType          string
+	maxFileSize       int64
+	combinePages      bool
+	maxWidth          int
+	maxHeight         int
+	padding           int
+	quality           int
+	progressive       bool
+	renderAnnotations bool
 )
 
 func init() {
@@ -38,6 +40,7 @@ func init() {
 	renderCmd.Flags().IntVarP(&padding, "padding", "", 0, "The padding in pixels between pages when combining pages.")
 	renderCmd.Flags().IntVarP(&quality, "quality", "", 95, "The quality to render the image in, only used for jpeg. The option max-file-size may lower this if necessary.")
 	renderCmd.Flags().BoolVarP(&progressive, "progressive", "", false, "Create progressive images, only used for jpeg.")
+	renderCmd.Flags().BoolVarP(&renderAnnotations, "render-annotations", "", false, "Render annotations that are embedded in the PDF.")
 
 	rootCmd.AddCommand(renderCmd)
 }
@@ -121,6 +124,11 @@ var renderCmd = &cobra.Command{
 			return
 		}
 
+		renderFlags := enums.FPDF_RENDER_FLAG(0)
+		if renderAnnotations {
+			renderFlags = enums.FPDF_RENDER_FLAG_ANNOT
+		}
+
 		if combinePages {
 			renderRequest := &requests.RenderToFile{
 				OutputFormat:  outputFormat,
@@ -140,9 +148,10 @@ var renderCmd = &cobra.Command{
 				renderPagesInPixels := []requests.RenderPageInPixels{}
 				for _, renderPage := range renderPages {
 					renderPagesInPixels = append(renderPagesInPixels, requests.RenderPageInPixels{
-						Page:   renderPage,
-						Width:  maxWidth,
-						Height: maxHeight,
+						Page:        renderPage,
+						Width:       maxWidth,
+						Height:      maxHeight,
+						RenderFlags: renderFlags,
 					})
 				}
 				renderRequest.RenderPagesInPixels = &requests.RenderPagesInPixels{
@@ -153,8 +162,9 @@ var renderCmd = &cobra.Command{
 				renderPagesInDPI := []requests.RenderPageInDPI{}
 				for _, renderPage := range renderPages {
 					renderPagesInDPI = append(renderPagesInDPI, requests.RenderPageInDPI{
-						Page: renderPage,
-						DPI:  dpi,
+						Page:        renderPage,
+						DPI:         dpi,
+						RenderFlags: renderFlags,
 					})
 				}
 				renderRequest.RenderPagesInDPI = &requests.RenderPagesInDPI{
@@ -201,9 +211,10 @@ var renderCmd = &cobra.Command{
 					renderRequest.RenderPagesInPixels = &requests.RenderPagesInPixels{
 						Pages: []requests.RenderPageInPixels{
 							{
-								Page:   renderPage,
-								Width:  maxWidth,
-								Height: maxHeight,
+								Page:        renderPage,
+								Width:       maxWidth,
+								Height:      maxHeight,
+								RenderFlags: renderFlags,
 							},
 						},
 						Padding: padding,
@@ -212,8 +223,9 @@ var renderCmd = &cobra.Command{
 					renderRequest.RenderPagesInDPI = &requests.RenderPagesInDPI{
 						Pages: []requests.RenderPageInDPI{
 							{
-								Page: renderPage,
-								DPI:  dpi,
+								Page:        renderPage,
+								DPI:         dpi,
+								RenderFlags: renderFlags,
 							},
 						},
 						Padding: padding,
