@@ -78,10 +78,11 @@ var infoCmd = &cobra.Command{
 		}
 
 		type pdfPage struct {
-			Number int
-			Width  float64
-			Height float64
-			Label  string
+			Number   int
+			Width    float64
+			Height   float64
+			Label    string
+			Rotation int
 		}
 
 		type pdfSignature struct {
@@ -153,6 +154,19 @@ var infoCmd = &cobra.Command{
 				return
 			}
 
+			rotation, err := pdf.PdfiumInstance.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{
+				Page: requests.Page{
+					ByIndex: &requests.PageByIndex{
+						Document: document.Document,
+						Index:    i,
+					},
+				},
+			})
+			if err != nil {
+				handleError(cmd, fmt.Errorf("could not get page rotation for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
+				return
+			}
+
 			label := ""
 			pageLabel, err := pdf.PdfiumInstance.FPDF_GetPageLabel(&requests.FPDF_GetPageLabel{
 				Document: document.Document,
@@ -163,10 +177,11 @@ var infoCmd = &cobra.Command{
 			}
 
 			pdfInfo.Pages = append(pdfInfo.Pages, pdfPage{
-				Number: i + 1,
-				Width:  pageSize.Width,
-				Height: pageSize.Height,
-				Label:  label,
+				Number:   i + 1,
+				Width:    pageSize.Width,
+				Height:   pageSize.Height,
+				Label:    label,
+				Rotation: int(rotation.PageRotation) * 90,
 			})
 		}
 
