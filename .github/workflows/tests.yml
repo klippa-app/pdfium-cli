@@ -88,7 +88,7 @@ jobs:
           sudo cp ./.github/workflows/libturbojpeg.pc /usr/lib/pkgconfig/libturbojpeg.pc
           sudo apt-get update -y
           sudo apt-get install -y musl-dev musl-tools
-          sudo curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.2/libjpeg-turbo-3.0.2.tar.gz -o libjpeg-turbo-3.0.2.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.2.tar.gz
+          sudo curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.2/libjpeg-turbo-3.0.2.tar.gz -o libjpeg-turbo-3.0.2.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.2.tar.gz
           cd /opt/libjpegturbo/libjpeg-turbo-3.0.2 && sudo mkdir build && cd build
           sudo cmake -G"Unix Makefiles" -DCMAKE_C_COMPILER=musl-gcc -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None ../
           sudo make turbojpeg
@@ -150,7 +150,7 @@ jobs:
           rm pdfium-win-x64.tgz
           mkdir D:\opt\pkgconfig
           cp ./.github/workflows/pdfium-windows.pc D:\opt\pkgconfig\pdfium.pc
-          curl -L https://master.dl.sourceforge.net/project/libjpeg-turbo/3.0.2/libjpeg-turbo-3.0.2-gcc64.exe -o libjpeg-turbo-3.0.2-gcc64.exe
+          curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.2/libjpeg-turbo-3.0.2-gcc64.exe -o libjpeg-turbo-3.0.2-gcc64.exe
           ./libjpeg-turbo-3.0.2-gcc64.exe /S
           $Folder = 'C:\libjpeg-turbo-gcc64\lib\pkgconfig'
           while (!(Test-Path -Path $Folder)) {
