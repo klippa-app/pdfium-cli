@@ -39,7 +39,7 @@ jobs:
         run: |
           $env:GOARCH = 'amd64'
           go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-windows-amd64 main.go
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: builds
           path: artifacts
