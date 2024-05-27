@@ -6,7 +6,7 @@ on:
 
 env:
   GO_VERSION: "1.22"
-  PDFIUM_VERSION: "6281"
+  PDFIUM_VERSION: "6392"
 
 jobs:
   release-webassembly:
@@ -87,7 +87,7 @@ jobs:
     env:
       CGO_ENABLED: 1
       CC: "musl-gcc"
-      LD_LIBRARY_PATH: "/opt/pdfium/lib:/opt/libjpegturbo/libjpeg-turbo-3.0.2/build"
+      LD_LIBRARY_PATH: "/opt/pdfium/lib:/opt/libjpegturbo/libjpeg-turbo-3.0.3/build"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,14 +105,14 @@ jobs:
           sudo cp ./.github/workflows/libturbojpeg.pc /usr/lib/pkgconfig/libturbojpeg.pc
           sudo apt-get update -y
           sudo apt-get install -y musl-dev musl-tools
-          sudo curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.2/libjpeg-turbo-3.0.2.tar.gz -o libjpeg-turbo-3.0.2.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.2.tar.gz
-          cd /opt/libjpegturbo/libjpeg-turbo-3.0.2 && sudo mkdir build && cd build
+          sudo curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.3/libjpeg-turbo-3.0.3.tar.gz -o libjpeg-turbo-3.0.3.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.3.tar.gz
+          cd /opt/libjpegturbo/libjpeg-turbo-3.0.3 && sudo mkdir build && cd build
           sudo cmake -G"Unix Makefiles" -DCMAKE_C_COMPILER=musl-gcc -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None ../
           sudo make turbojpeg
 
       - name: Build
         run: |
-          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.2/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-linux-musl-amd64 main.go
+          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.3/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-linux-musl-amd64 main.go
 
       - uses: actions/upload-artifact@v4
         with:
@@ -179,8 +179,8 @@ jobs:
           rm pdfium-win-x64.tgz
           mkdir D:\opt\pkgconfig
           cp ./.github/workflows/pdfium-windows.pc D:\opt\pkgconfig\pdfium.pc
-          curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.2/libjpeg-turbo-3.0.2-gcc64.exe -o libjpeg-turbo-3.0.2-gcc64.exe
-          ./libjpeg-turbo-3.0.2-gcc64.exe /S
+          curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.3/libjpeg-turbo-3.0.3-gcc64.exe -o libjpeg-turbo-3.0.3-gcc64.exe
+          ./libjpeg-turbo-3.0.3-gcc64.exe /S
           $Folder = 'C:\libjpeg-turbo-gcc64\lib\pkgconfig'
           while (!(Test-Path -Path $Folder)) {
             "libjpeg-turbo does not exist yet!"

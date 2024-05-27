@@ -4,6 +4,6 @@ includedir=/opt/libjpegturbo/libjpeg-turbo-3.0.2
 
 Name: libturbojpeg
 Description: A SIMD-accelerated JPEG codec that provides the TurboJPEG API
-Version: 3.0.2
+Version: 3.0.3
 Libs: -L${libdir} -lturbojpeg
 Cflags: -I${includedir}
