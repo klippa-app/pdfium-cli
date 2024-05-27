@@ -41,7 +41,7 @@ jobs:
           go build -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-webassembly-windows-amd64 main.go
       - uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: builds-webassembly-${{ matrix.os }}
           path: artifacts
       - uses: AButler/upload-release-assets@v3.0
         with:
@@ -75,7 +75,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: builds-cgo-linux
           path: artifacts
 
       - uses: AButler/upload-release-assets@v3.0
@@ -116,7 +116,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: builds-cgo-linux-musl
           path: artifacts
 
       - uses: AButler/upload-release-assets@v3.0
@@ -152,7 +152,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: builds-cgo-macos-arm64
           path: artifacts
 
       - uses: AButler/upload-release-assets@v3.0
@@ -187,7 +187,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: builds-cgo-macos-x64
           path: artifacts
 
       - uses: AButler/upload-release-assets@v3.0
@@ -231,7 +231,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: builds
+          name: builds-cgo-windows
           path: artifacts
 
       - uses: AButler/upload-release-assets@v3.0
