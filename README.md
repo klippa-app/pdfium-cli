@@ -51,7 +51,7 @@ The following release types are available:
   - Native + MUSL (amd64)
 - MacOS
   - WebAssembly (amd64 + arm64)
-  - Native (amd64)
+  - Native (amd64 + arm64)
 - Windows
   - WebAssembly (amd64)
   - Native (amd64)

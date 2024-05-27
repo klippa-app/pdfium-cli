@@ -1,9 +1,9 @@
-prefix=/opt/libjpegturbo/libjpeg-turbo-3.0.2
-libdir=/opt/libjpegturbo/libjpeg-turbo-3.0.2/build
-includedir=/opt/libjpegturbo/libjpeg-turbo-3.0.2
+prefix=/opt/libjpegturbo/libjpeg-turbo-3.0.3
+libdir=/opt/libjpegturbo/libjpeg-turbo-3.0.3/build
+includedir=/opt/libjpegturbo/libjpeg-turbo-3.0.3
 
 Name: libturbojpeg
 Description: A SIMD-accelerated JPEG codec that provides the TurboJPEG API
-Version: 3.0.2
+Version: 3.0.3
 Libs: -L${libdir} -lturbojpeg
 Cflags: -I${includedir}
