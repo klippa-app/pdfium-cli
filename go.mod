@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/klippa-app/go-pdfium v1.12.2
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
