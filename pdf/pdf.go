@@ -56,6 +56,17 @@ func NormalizePageRange(pageCount int, pageRange string) (*string, *int, error) 
 				}
 
 				pageNumbers = append(pageNumbers, pageCount-parsedPageNumber)
+			} else if strings.HasPrefix(pageRangeParts[pageRangePartI], "m") {
+				parsedPageNumber, err := strconv.Atoi(strings.TrimPrefix(pageRangeParts[pageRangePartI], "m"))
+				if err != nil || parsedPageNumber < 1 {
+					return nil, nil, fmt.Errorf("%s is not a valid page number", strings.TrimPrefix(pageRangeParts[pageRangePartI], "m"))
+				}
+
+				if parsedPageNumber > pageCount {
+					pageNumbers = append(pageNumbers, pageCount)
+				} else {
+					pageNumbers = append(pageNumbers, parsedPageNumber)
+				}
 			} else {
 				parsedPageNumber, err := strconv.Atoi(pageRangeParts[pageRangePartI])
 				if err != nil {

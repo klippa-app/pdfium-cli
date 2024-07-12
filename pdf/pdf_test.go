@@ -61,6 +61,13 @@ func TestNormalizePageRange(t *testing.T) {
 			"1,2,3,4,5",
 			"",
 		},
+		{
+			"test maximum page-range",
+			5,
+			"1-m10",
+			"1,2,3,4,5",
+			"",
+		},
 	}
 
 	for i := range tests {
