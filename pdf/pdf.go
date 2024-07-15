@@ -27,7 +27,7 @@ func ClosePdfium() {
 // supports simple instructions like 1-5 or just a page number. This method
 // can automatically calculate ends and reverse pages for example.
 // This way we can also properly validate page ranges.
-func NormalizePageRange(pageCount int, pageRange string) (*string, *int, error) {
+func NormalizePageRange(pageCount int, pageRange string, ignoreInvalidPages bool) (*string, *int, error) {
 	calculatedPageCount := 0
 	var calculatedPageNumbers []string
 	seenPageNumbers := map[int]bool{}
@@ -48,10 +48,17 @@ func NormalizePageRange(pageCount int, pageRange string) (*string, *int, error) 
 			} else if strings.HasPrefix(pageRangeParts[pageRangePartI], "r") {
 				parsedPageNumber, err := strconv.Atoi(strings.TrimPrefix(pageRangeParts[pageRangePartI], "r"))
 				if err != nil {
+					if ignoreInvalidPages {
+						continue
+					}
 					return nil, nil, fmt.Errorf("%s is not a valid page number", strings.TrimPrefix(pageRangeParts[pageRangePartI], "r"))
 				}
 
 				if pageCount-parsedPageNumber < 1 || pageCount-parsedPageNumber > pageCount {
+					if ignoreInvalidPages {
+						pageNumbers = append(pageNumbers, 1)
+						continue
+					}
 					return nil, nil, fmt.Errorf("%d is not a valid page number, the document has %d page(s)", pageCount-parsedPageNumber, pageCount)
 				}
 
@@ -59,10 +66,17 @@ func NormalizePageRange(pageCount int, pageRange string) (*string, *int, error) 
 			} else {
 				parsedPageNumber, err := strconv.Atoi(pageRangeParts[pageRangePartI])
 				if err != nil {
+					if ignoreInvalidPages {
+						continue
+					}
 					return nil, nil, fmt.Errorf("%s is not a valid page number", pageRangeParts[pageRangePartI])
 				}
 
 				if parsedPageNumber < 1 || parsedPageNumber > pageCount {
+					if ignoreInvalidPages {
+						pageNumbers = append(pageNumbers, pageCount)
+						continue
+					}
 					return nil, nil, fmt.Errorf("%s is not a valid page number, the document has %d page(s)", pageRangeParts[pageRangePartI], pageCount)
 				}
 
