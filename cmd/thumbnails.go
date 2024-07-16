@@ -82,7 +82,7 @@ var thumbnailsCmd = &cobra.Command{
 			pageRange = pages
 		}
 
-		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange)
+		parsedPageRange, _, err := pdf.NormalizePageRange(pageCount.PageCount, pageRange, ignoreInvalidPages)
 		if err != nil {
 			handleError(cmd, fmt.Errorf("invalid page range '%s': %w\n", pageRange, err), ExitCodeInvalidPageRange)
 			return
