@@ -48,45 +48,29 @@ func NormalizePageRange(pageCount int, pageRange string, ignoreInvalidPages bool
 			} else if strings.HasPrefix(pageRangeParts[pageRangePartI], "r") {
 				parsedPageNumber, err := strconv.Atoi(strings.TrimPrefix(pageRangeParts[pageRangePartI], "r"))
 				if err != nil {
-					if ignoreInvalidPages {
-						continue
-					}
 					return nil, nil, fmt.Errorf("%s is not a valid page number", strings.TrimPrefix(pageRangeParts[pageRangePartI], "r"))
-				}
-
-				if pageCount-parsedPageNumber < 1 || pageCount-parsedPageNumber > pageCount {
-					if ignoreInvalidPages {
-						pageNumbers = append(pageNumbers, 1)
-						continue
-					}
-					return nil, nil, fmt.Errorf("%d is not a valid page number, the document has %d page(s)", pageCount-parsedPageNumber, pageCount)
 				}
 
 				pageNumbers = append(pageNumbers, pageCount-parsedPageNumber)
 			} else {
 				parsedPageNumber, err := strconv.Atoi(pageRangeParts[pageRangePartI])
 				if err != nil {
-					if ignoreInvalidPages {
-						continue
-					}
 					return nil, nil, fmt.Errorf("%s is not a valid page number", pageRangeParts[pageRangePartI])
-				}
-
-				if parsedPageNumber < 1 || parsedPageNumber > pageCount {
-					if ignoreInvalidPages {
-						pageNumbers = append(pageNumbers, pageCount)
-						continue
-					}
-					return nil, nil, fmt.Errorf("%s is not a valid page number, the document has %d page(s)", pageRangeParts[pageRangePartI], pageCount)
 				}
 
 				pageNumbers = append(pageNumbers, parsedPageNumber)
 			}
 		}
-
 		if len(pageNumbers) == 0 {
 			continue
 		} else if len(pageNumbers) == 1 {
+			if pageNumbers[0] < 1 || pageNumbers[0] > pageCount {
+				if ignoreInvalidPages {
+					continue
+				}
+				return nil, nil, fmt.Errorf("%d is not a valid page number, the document has %d page(s)", pageNumbers[0], pageCount)
+			}
+
 			_, seen := seenPageNumbers[pageNumbers[0]]
 			if !seen {
 				// Only 1 page number.
@@ -94,8 +78,24 @@ func NormalizePageRange(pageCount int, pageRange string, ignoreInvalidPages bool
 				calculatedPageNumbers = append(calculatedPageNumbers, strconv.Itoa(pageNumbers[0]))
 			}
 		} else {
+			// If the end page number is lower than the start page number,
+			// ignore the whole page range.
+			if pageNumbers[1] < pageNumbers[0] {
+				if ignoreInvalidPages {
+					continue
+				}
+				return nil, nil, fmt.Errorf("%d is not a valid page number, the document has %d page(s)", pageNumbers[1], pageCount)
+			}
+
 			// A page range, a start and end number. Tokens should be replaced by earlier logic.
 			for i := pageNumbers[0]; i <= pageNumbers[1]; i++ {
+				if i < 1 || i > pageCount {
+					if ignoreInvalidPages {
+						continue
+					}
+					return nil, nil, fmt.Errorf("%d is not a valid page number, the document has %d page(s)", i, pageCount)
+				}
+
 				_, seen := seenPageNumbers[i]
 				if !seen {
 					seenPageNumbers[i] = true
@@ -103,6 +103,10 @@ func NormalizePageRange(pageCount int, pageRange string, ignoreInvalidPages bool
 				}
 			}
 		}
+	}
+
+	if len(calculatedPageNumbers) == 0 {
+		return nil, nil, fmt.Errorf("the page range(s) resulted in no valid pages")
 	}
 
 	pageRange = strings.Join(calculatedPageNumbers, ",")
