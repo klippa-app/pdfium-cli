@@ -35,7 +35,7 @@ func TestNormalizePageRange(t *testing.T) {
 			"1-10",
 			false,
 			"1,2,3,4,5",
-			"10 is not a valid page number, the document has 5 page(s)",
+			"6 is not a valid page number, the document has 5 page(s)",
 		},
 		{
 			"test out of range page-range",
@@ -43,7 +43,15 @@ func TestNormalizePageRange(t *testing.T) {
 			"1,2,4-22",
 			false,
 			"1,2,3,4,5",
-			"22 is not a valid page number, the document has 20 page(s)",
+			"21 is not a valid page number, the document has 20 page(s)",
+		},
+		{
+			"test out of range page-range",
+			20,
+			"1,2,25",
+			false,
+			"1,2,3,4,5",
+			"25 is not a valid page number, the document has 20 page(s)",
 		},
 		{
 			"test reverse page-range",
@@ -75,6 +83,22 @@ func TestNormalizePageRange(t *testing.T) {
 			"3-10,6,2",
 			true,
 			"3,4,5,2",
+			"",
+		},
+		{
+			"test ignore invalid pages with no valid output",
+			5,
+			"r2-r6",
+			true,
+			"",
+			"the page range(s) resulted in no valid pages",
+		},
+		{
+			"test ignore invalid pages",
+			5,
+			"r6-r2",
+			true,
+			"1,2,3",
 			"",
 		},
 	}
