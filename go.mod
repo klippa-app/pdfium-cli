@@ -1,8 +1,8 @@
 module github.com/klippa-app/pdfium-cli
 
-go 1.23
+go 1.24
 
-toolchain go1.23.3
+toolchain go1.24.0
 
 require (
 	github.com/klippa-app/go-pdfium v1.14.0
