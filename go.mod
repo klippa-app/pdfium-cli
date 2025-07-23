@@ -2,10 +2,10 @@ module github.com/klippa-app/pdfium-cli
 
 go 1.24
 
-toolchain go1.24.0
+toolchain go1.24.5
 
 require (
-	github.com/klippa-app/go-pdfium v1.14.1
+	github.com/klippa-app/go-pdfium v1.15.0
 	github.com/spf13/cobra v1.9.1
 )
 
@@ -23,10 +23,10 @@ require (
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/grpc v1.58.3 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 )
