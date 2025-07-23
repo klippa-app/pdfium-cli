@@ -120,7 +120,7 @@ Available Commands:
   merge       Merge multiple PDFs into a single PDF
   render      Render a PDF into images
   text        Get the text of a PDF
-  thumbnails  Extract the attachments of a PDF
+  thumbnails  Extract the thumbnails of a PDF
 
 
 Flags:

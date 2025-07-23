@@ -29,8 +29,8 @@ func init() {
 
 var thumbnailsCmd = &cobra.Command{
 	Use:   "thumbnails [input] [output-folder]",
-	Short: "Extract the attachments of a PDF",
-	Long:  "Extract the attachments of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\nThis extracts embedded thumbnails, it does not render a thumbnail of the page. Not all PDFs and pages have thumbnails. You can use the render command if you want to generate thumbnails.[output-folder] can be either a folder or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it.",
+	Short: "Extract the thumbnails of a PDF",
+	Long:  "Extract the thumbnails of a PDF and store them as file.\n[input] can either be a file path or - for stdin.\nThis extracts embedded thumbnails, it does not render a thumbnail of the page. Not all PDFs and pages have thumbnails. You can use the render command if you want to generate thumbnails.[output-folder] can be either a folder or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return newExitCodeError(err, ExitCodeInvalidArguments)
