@@ -1,10 +1,13 @@
 # pdfium-cli
 
 [![Build Status][build-status]][build-url]
+[![Release Status][release-status]][build-url]
 
 [build-status]:https://github.com/klippa-app/pdfium-cli/workflows/Go%20tests/badge.svg
 
 [build-url]:https://github.com/klippa-app/go-pdfium/actions
+
+[release-status]:https://github.com/klippa-app/pdfium-cli/workflows/Release%20binaries/badge.svg
 
 :rocket: *Easy to use PDF CLI tool powered by [PDFium](http://pdfium.org) and [go-pdfium](https://github.com/klippa-app/go-pdfium)* :rocket:
 
