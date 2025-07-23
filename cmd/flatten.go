@@ -24,7 +24,7 @@ func init() {
 var flattenCmd = &cobra.Command{
 	Use:   "flatten [input] [output]",
 	Short: "Flatten a PDF",
-	Long:  "Flatten a PDF.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it. The output filename should contain a \"%d\" placeholder for the page number, e.g. split invoice.pdf invoice-%d.pdf, the result for a 2-page PDF will be invoice-1.pdf and invoice-2.pdf.",
+	Long:  "Flatten a PDF. This will flatten annotations and form fields into the page contents.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return newExitCodeError(err, ExitCodeInvalidArguments)
