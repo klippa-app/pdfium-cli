@@ -2,7 +2,7 @@
 
 [![Build Status][build-status]][build-url]
 
-[build-status]:https://github.com/klippa-app/pdfium-cli/workflows/Go tests/badge.svg
+[build-status]:https://github.com/klippa-app/pdfium-cli/workflows/Go%20tests/badge.svg
 
 [build-url]:https://github.com/klippa-app/go-pdfium/actions
 
