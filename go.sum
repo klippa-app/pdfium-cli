@@ -34,8 +34,8 @@ github.com/jhump/protoreflect v1.15.1 h1:HUMERORf3I3ZdX05WaQ6MIpd/NJ434hTp5YiKgf
 github.com/jhump/protoreflect v1.15.1/go.mod h1:jD/2GMKKE6OqX8qTjhADU1e6DShO+gavG9e0Q693nKo=
 github.com/jolestar/go-commons-pool/v2 v2.1.2 h1:E+XGo58F23t7HtZiC/W6jzO2Ux2IccSH/yx4nD+J1CM=
 github.com/jolestar/go-commons-pool/v2 v2.1.2/go.mod h1:r4NYccrkS5UqP1YQI1COyTZ9UjPJAAGTUxzcsK1kqhY=
-github.com/klippa-app/go-pdfium v1.16.0 h1:iMOEXGwuE2ablcXMiJ9oXJG1ls4HzM/TRmW90jCP8rM=
-github.com/klippa-app/go-pdfium v1.16.0/go.mod h1:CmBY7jK42ibAwMh50aSCWQYId7LEzTuQcqFXfPd/oFQ=
+github.com/klippa-app/go-pdfium v1.17.0 h1:cS/31VP0JeiMFKzp6J8aay9ztdSDuImQQuQOA2J1qCI=
+github.com/klippa-app/go-pdfium v1.17.0/go.mod h1:CmBY7jK42ibAwMh50aSCWQYId7LEzTuQcqFXfPd/oFQ=
 github.com/mattn/go-colorable v0.1.9/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
 github.com/mattn/go-colorable v0.1.12 h1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=
 github.com/mattn/go-colorable v0.1.12/go.mod h1:u5H1YNBxpqRaxsYJYSkiCWKzEfiAb1Gb520KVy5xxl4=

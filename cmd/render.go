@@ -25,6 +25,7 @@ var (
 	quality           int
 	progressive       bool
 	renderAnnotations bool
+	renderForm        bool
 )
 
 func init() {
@@ -41,6 +42,7 @@ func init() {
 	renderCmd.Flags().IntVarP(&quality, "quality", "", 95, "The quality to render the image in, only used for jpeg. The option max-file-size may lower this if necessary.")
 	renderCmd.Flags().BoolVarP(&progressive, "progressive", "", false, "Create progressive images, only used for jpeg.")
 	renderCmd.Flags().BoolVarP(&renderAnnotations, "render-annotations", "", false, "Render annotations that are embedded in the PDF.")
+	renderCmd.Flags().BoolVarP(&renderForm, "render-form", "", false, "Render form fields that are embedded in the PDF.")
 
 	rootCmd.AddCommand(renderCmd)
 }
@@ -152,6 +154,7 @@ var renderCmd = &cobra.Command{
 						Width:       maxWidth,
 						Height:      maxHeight,
 						RenderFlags: renderFlags,
+						RenderForm:  renderForm,
 					})
 				}
 				renderRequest.RenderPagesInPixels = &requests.RenderPagesInPixels{
@@ -165,6 +168,7 @@ var renderCmd = &cobra.Command{
 						Page:        renderPage,
 						DPI:         dpi,
 						RenderFlags: renderFlags,
+						RenderForm:  renderForm,
 					})
 				}
 				renderRequest.RenderPagesInDPI = &requests.RenderPagesInDPI{
@@ -215,6 +219,7 @@ var renderCmd = &cobra.Command{
 								Width:       maxWidth,
 								Height:      maxHeight,
 								RenderFlags: renderFlags,
+								RenderForm:  renderForm,
 							},
 						},
 						Padding: padding,
@@ -226,6 +231,7 @@ var renderCmd = &cobra.Command{
 								Page:        renderPage,
 								DPI:         dpi,
 								RenderFlags: renderFlags,
+								RenderForm:  renderForm,
 							},
 						},
 						Padding: padding,
