@@ -22,6 +22,7 @@
 * Extracting attachments from PDFs
 * Extracting thumbnails from PDFs
 * Extracting JavaScripts from PDFs
+* Extracting form information (field details and values)
 * Flattening PDFs
 * Piping input through stdin when the input is one file (use filename `-`)
 * Piping output through stdout when the output is one file (use filename `-`)
@@ -113,6 +114,7 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   explode     Explode a PDF into multiple PDFs
   flatten     Flatten a PDF
+  form        Get the form of a PDF
   help        Help about any command
   images      Extract the images of a PDF
   info        Get the information of a PDF
