@@ -124,6 +124,81 @@ jobs:
           files: 'artifacts/*'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+  release-cgo-linux-arm64:
+    env:
+      CGO_ENABLED: 1
+      LD_LIBRARY_PATH: "/opt/pdfium/lib"
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set up PDFium library libjpeg-turbo
+        run: |
+          sudo curl -L https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F${{ env.PDFIUM_VERSION }}/pdfium-linux-x64.tgz -o pdfium-linux-arm64.tgz && sudo mkdir /opt/pdfium && sudo tar -C /opt/pdfium -xvf pdfium-linux-arm64.tgz
+          sudo rm pdfium-linux-arm64.tgz
+          sudo cp ./.github/workflows/pdfium.pc /usr/lib/pkgconfig/pdfium.pc
+          sudo apt-get update -y
+          sudo apt-get install -y libturbojpeg libturbojpeg-dev
+
+      - name: Build
+        run: |
+          go build -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-linux-arm64 main.go
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds-cgo-linux-arm64
+          path: artifacts
+
+      - uses: AButler/upload-release-assets@v3.0
+        with:
+          files: 'artifacts/*'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  release-cgo-linux-musl-arm64:
+    env:
+      CGO_ENABLED: 1
+      CC: "musl-gcc"
+      LD_LIBRARY_PATH: "/opt/pdfium/lib:/opt/libjpegturbo/libjpeg-turbo-3.0.3/build"
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set up PDFium library, musl and libjpeg-turbo
+        run: |
+          sudo curl -L https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F${{ env.PDFIUM_VERSION }}/pdfium-linux-musl-arm64.tgz -o pdfium-linux-musl-arm64.tgz && sudo mkdir /opt/pdfium && sudo tar -C /opt/pdfium -xvf pdfium-linux-musl-arm64.tgz
+          sudo rm pdfium-linux-musl-arm64.tgz
+          sudo cp ./.github/workflows/pdfium.pc /usr/lib/pkgconfig/pdfium.pc
+          sudo cp ./.github/workflows/libturbojpeg.pc /usr/lib/pkgconfig/libturbojpeg.pc
+          sudo apt-get update -y
+          sudo apt-get install -y musl-dev musl-tools
+          sudo curl -L https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.3/libjpeg-turbo-3.0.3.tar.gz -o libjpeg-turbo-3.0.3.tar.gz && sudo mkdir /opt/libjpegturbo && sudo tar -C /opt/libjpegturbo -xvf libjpeg-turbo-3.0.3.tar.gz
+          cd /opt/libjpegturbo/libjpeg-turbo-3.0.3 && sudo mkdir build && cd build
+          sudo cmake -G"Unix Makefiles" -DCMAKE_C_COMPILER=musl-gcc -DWITH_JPEG8=1 -DCMAKE_BUILD_TYPE=None ../
+          sudo make turbojpeg
+
+      - name: Build
+        run: |
+          go build --ldflags '-linkmode external -extldflags "-fno-PIC -L/opt/libjpegturbo/libjpeg-turbo-3.0.3/build"' -tags pdfium_experimental,pdfium_cli_use_cgo,pdfium_use_turbojpeg -ldflags "-X 'github.com/klippa-app/pdfium-cli/version.VERSION=${{ github.event.release.name }}'" -o artifacts/pdfium-native-linux-musl-arm64 main.go
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds-cgo-linux-musl-arm64
+          path: artifacts
+
+      - uses: AButler/upload-release-assets@v3.0
+        with:
+          files: 'artifacts/*'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
   release-cgo-macos-arm64:
     env:
