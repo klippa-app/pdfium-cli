@@ -6,7 +6,7 @@ toolchain go1.24.5
 
 require (
 	github.com/klippa-app/go-pdfium v1.17.2
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 )
 
 require (
