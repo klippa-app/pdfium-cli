@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/klippa-app/go-pdfium/requests"
 
@@ -11,28 +13,49 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// parseFileWithPageRange parses a file argument that may contain an optional page range
+// in the format "filename.pdf[1-3]". Returns the filename and page range string.
+// If no page range is specified, returns "first-last" as the page range.
+func parseFileWithPageRange(arg string) (string, string) {
+	if strings.HasSuffix(arg, "]") {
+		bracketIdx := strings.LastIndex(arg, "[")
+		if bracketIdx != -1 {
+			pageRange := arg[bracketIdx+1 : len(arg)-1]
+			if pageRange != "" {
+				return arg[:bracketIdx], pageRange
+			}
+		}
+	}
+	return arg, "first-last"
+}
+
 func init() {
 	addGenericPDFOptions(mergeCmd)
+	addIgnoreInvalidPagesOption(mergeCmd)
 	rootCmd.AddCommand(mergeCmd)
 }
 
 var mergeCmd = &cobra.Command{
-	Use:   "merge [input] [input] ([input]...) [output]",
+	Use:   "merge [input] ([input]...) [output]",
 	Short: "Merge multiple PDFs into a single PDF",
-	Long:  "Merge multiple PDFs into a single PDF.\n[output] can either be a file path or - for stdout.",
+	Long:  "Merge multiple PDFs into a single PDF.\n[output] can either be a file path or - for stdout.\nEach [input] can optionally include a page range using the syntax filename.pdf[{pagerange}],\nfor example invoice.pdf[1-3] to include only pages 1, 2 and 3.",
 	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return newExitCodeError(errors.New("no input given"), ExitCodeInvalidArguments)
+		}
 		if args[0] == stdFilename {
-			if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
+			if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
 				return newExitCodeError(err, ExitCodeInvalidArguments)
 			}
 		} else {
-			if err := cobra.MinimumNArgs(3)(cmd, args); err != nil {
+			if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
 				return newExitCodeError(err, ExitCodeInvalidArguments)
 			}
 
 			for i := 0; i < len(args)-1; i++ {
-				if _, err := os.Stat(args[i]); err != nil {
-					return fmt.Errorf("could not open input file %s: %w", args[0], newExitCodeError(err, ExitCodeInvalidInput))
+				filename, _ := parseFileWithPageRange(args[i])
+				if _, err := os.Stat(filename); err != nil {
+					return fmt.Errorf("could not open input file %s: %w", filename, newExitCodeError(err, ExitCodeInvalidInput))
 				}
 			}
 		}
@@ -57,14 +80,16 @@ var mergeCmd = &cobra.Command{
 		i := 0
 		for true {
 			var filename string
+			var filePageRange string
 			if args[0] == stdFilename {
 				filename = stdFilename
+				filePageRange = "first-last"
 			} else {
 				// Reached last file.
 				if i == len(args)-1 {
 					break
 				}
-				filename = args[i]
+				filename, filePageRange = parseFileWithPageRange(args[i])
 			}
 
 			document, closeFile, err := openFile(filename)
@@ -73,7 +98,7 @@ var mergeCmd = &cobra.Command{
 				if err == stdinNoMoreFiles {
 					break
 				}
-				handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", args[i], err), ExitCodeInvalidInput)
+				handleError(cmd, fmt.Errorf("could not open input file %s: %w\n", filename, err), ExitCodeInvalidInput)
 				return
 			}
 
@@ -86,14 +111,14 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				handleError(cmd, fmt.Errorf("could not get page ranges for file %s: %w", args[i], newPdfiumError(err)), ExitCodePdfiumError)
+				handleError(cmd, fmt.Errorf("could not get page ranges for file %s: %w", filename, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
-			pageRange, calculatedPageCount, err := pdf.NormalizePageRange(pageCount.PageCount, "first-last", false)
+			pageRange, calculatedPageCount, err := pdf.NormalizePageRange(pageCount.PageCount, filePageRange, ignoreInvalidPages)
 			if err != nil {
 				closeFunc()
-				handleError(cmd, fmt.Errorf("invalid page range 'first-last': %w\n", err), ExitCodeInvalidPageRange)
+				handleError(cmd, fmt.Errorf("invalid page range '%s' for file %s: %w\n", filePageRange, filename, err), ExitCodeInvalidPageRange)
 				return
 			}
 
@@ -105,7 +130,7 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				handleError(cmd, fmt.Errorf("could not import pages for file %s: %w", args[i], newPdfiumError(err)), ExitCodePdfiumError)
+				handleError(cmd, fmt.Errorf("could not import pages for file %s: %w", filename, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
@@ -116,7 +141,7 @@ var mergeCmd = &cobra.Command{
 			})
 			if err != nil {
 				closeFunc()
-				handleError(cmd, fmt.Errorf("could not close document for file %s: %w", args[i], newPdfiumError(err)), ExitCodePdfiumError)
+				handleError(cmd, fmt.Errorf("could not close document for file %s: %w", filename, newPdfiumError(err)), ExitCodePdfiumError)
 				return
 			}
 
