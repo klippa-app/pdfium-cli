@@ -8,14 +8,19 @@ import (
 
 	"github.com/klippa-app/pdfium-cli/pdf"
 
+	"github.com/klippa-app/go-pdfium/enums"
+	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 	"github.com/spf13/cobra"
 )
 
+var withObjects bool
+
 func init() {
 	addGenericPDFOptions(infoCmd)
 	infoCmd.Flags().StringVarP(&outputType, "output-type", "", "text", "The file type to output, text or json")
+	infoCmd.Flags().BoolVarP(&withObjects, "with-objects", "", false, "Count page objects by type (path, text, image, shading, form). Descends into form XObjects recursively.")
 	rootCmd.AddCommand(infoCmd)
 }
 
@@ -77,12 +82,28 @@ var infoCmd = &cobra.Command{
 			Value string
 		}
 
+		type pdfObjectCounts struct {
+			Paths    int
+			Texts    int
+			Images   int
+			Shadings int
+			Forms    int
+			Unknown  int
+		}
+
+		type pdfPageObjects struct {
+			Counts           pdfObjectCounts
+			HasVectorContent bool
+			HasRasterContent bool
+		}
+
 		type pdfPage struct {
 			Number   int
 			Width    float64
 			Height   float64
 			Label    string
 			Rotation int
+			Objects  *pdfPageObjects
 		}
 
 		type pdfSignature struct {
@@ -96,6 +117,7 @@ var infoCmd = &cobra.Command{
 			Metadata                []pdfInfoMetadata
 			PageCount               int
 			Pages                   []pdfPage
+			Objects                 *pdfPageObjects
 			Permissions             *responses.FPDF_GetDocPermissions
 			SecurityHandlerRevision int
 			Signatures              []pdfSignature
@@ -140,6 +162,50 @@ var infoCmd = &cobra.Command{
 
 		pdfInfo.PageCount = pageCount.PageCount
 
+		// walkObject counts a single page object and recurses into form XObjects.
+		var walkObject func(*pdfObjectCounts, references.FPDF_PAGEOBJECT) error
+		walkObject = func(counts *pdfObjectCounts, obj references.FPDF_PAGEOBJECT) error {
+			objType, err := pdf.PdfiumInstance.FPDFPageObj_GetType(&requests.FPDFPageObj_GetType{
+				PageObject: obj,
+			})
+			if err != nil {
+				return err
+			}
+			switch objType.Type {
+			case enums.FPDF_PAGEOBJ_PATH:
+				counts.Paths++
+			case enums.FPDF_PAGEOBJ_TEXT:
+				counts.Texts++
+			case enums.FPDF_PAGEOBJ_IMAGE:
+				counts.Images++
+			case enums.FPDF_PAGEOBJ_SHADING:
+				counts.Shadings++
+			case enums.FPDF_PAGEOBJ_FORM:
+				counts.Forms++
+				formObjCount, err := pdf.PdfiumInstance.FPDFFormObj_CountObjects(&requests.FPDFFormObj_CountObjects{
+					PageObject: obj,
+				})
+				if err != nil {
+					return err
+				}
+				for j := 0; j < formObjCount.Count; j++ {
+					childObj, err := pdf.PdfiumInstance.FPDFFormObj_GetObject(&requests.FPDFFormObj_GetObject{
+						PageObject: obj,
+						Index:      uint64(j),
+					})
+					if err != nil {
+						return err
+					}
+					if err := walkObject(counts, childObj.PageObject); err != nil {
+						return err
+					}
+				}
+			default:
+				counts.Unknown++
+			}
+			return nil
+		}
+
 		for i := 0; i < pageCount.PageCount; i++ {
 			pageSize, err := pdf.PdfiumInstance.GetPageSize(&requests.GetPageSize{
 				Page: requests.Page{
@@ -176,13 +242,81 @@ var infoCmd = &cobra.Command{
 				label = pageLabel.Label
 			}
 
-			pdfInfo.Pages = append(pdfInfo.Pages, pdfPage{
+			newPage := pdfPage{
 				Number:   i + 1,
 				Width:    pageSize.Width,
 				Height:   pageSize.Height,
 				Label:    label,
 				Rotation: int(rotation.PageRotation) * 90,
-			})
+			}
+
+			if withObjects {
+				loadedPage, err := pdf.PdfiumInstance.FPDF_LoadPage(&requests.FPDF_LoadPage{
+					Document: document.Document,
+					Index:    i,
+				})
+				if err != nil {
+					handleError(cmd, fmt.Errorf("could not load page %d for PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
+					return
+				}
+
+				counts := &pdfObjectCounts{}
+				objCount, err := pdf.PdfiumInstance.FPDFPage_CountObjects(&requests.FPDFPage_CountObjects{
+					Page: requests.Page{ByReference: &loadedPage.Page},
+				})
+				if err != nil {
+					pdf.PdfiumInstance.FPDF_ClosePage(&requests.FPDF_ClosePage{Page: loadedPage.Page})
+					handleError(cmd, fmt.Errorf("could not count objects for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
+					return
+				}
+
+				var walkErr error
+				for j := 0; j < objCount.Count && walkErr == nil; j++ {
+					obj, err := pdf.PdfiumInstance.FPDFPage_GetObject(&requests.FPDFPage_GetObject{
+						Page:  requests.Page{ByReference: &loadedPage.Page},
+						Index: j,
+					})
+					if err != nil {
+						walkErr = err
+						break
+					}
+					walkErr = walkObject(counts, obj.PageObject)
+				}
+
+				pdf.PdfiumInstance.FPDF_ClosePage(&requests.FPDF_ClosePage{Page: loadedPage.Page})
+
+				if walkErr != nil {
+					handleError(cmd, fmt.Errorf("could not walk objects for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(walkErr)), ExitCodePdfiumError)
+					return
+				}
+
+				newPage.Objects = &pdfPageObjects{
+					Counts:           *counts,
+					HasVectorContent: counts.Paths > 0 || counts.Shadings > 0,
+					HasRasterContent: counts.Images > 0,
+				}
+			}
+
+			pdfInfo.Pages = append(pdfInfo.Pages, newPage)
+		}
+
+		if withObjects {
+			total := &pdfObjectCounts{}
+			for _, p := range pdfInfo.Pages {
+				if p.Objects != nil {
+					total.Paths += p.Objects.Counts.Paths
+					total.Texts += p.Objects.Counts.Texts
+					total.Images += p.Objects.Counts.Images
+					total.Shadings += p.Objects.Counts.Shadings
+					total.Forms += p.Objects.Counts.Forms
+					total.Unknown += p.Objects.Counts.Unknown
+				}
+			}
+			pdfInfo.Objects = &pdfPageObjects{
+				Counts:           *total,
+				HasVectorContent: total.Paths > 0 || total.Texts > 0 || total.Shadings > 0,
+				HasRasterContent: total.Images > 0,
+			}
 		}
 
 		permissions, err := pdf.PdfiumInstance.FPDF_GetDocPermissions(&requests.FPDF_GetDocPermissions{
@@ -289,6 +423,19 @@ var infoCmd = &cobra.Command{
 
 			for i := range pdfInfo.Pages {
 				cmd.Printf(" - Page %d, size: %.2f x %.2f, label: %s\n", pdfInfo.Pages[i].Number, pdfInfo.Pages[i].Width, pdfInfo.Pages[i].Height, pdfInfo.Pages[i].Label)
+				if pdfInfo.Pages[i].Objects != nil {
+					o := pdfInfo.Pages[i].Objects
+					cmd.Printf("   Objects: paths=%d, text=%d, images=%d, shading=%d, forms=%d | vector=%v, raster=%v\n",
+						o.Counts.Paths, o.Counts.Texts, o.Counts.Images, o.Counts.Shadings, o.Counts.Forms,
+						o.HasVectorContent, o.HasRasterContent)
+				}
+			}
+
+			if pdfInfo.Objects != nil {
+				o := pdfInfo.Objects
+				cmd.Printf("Total objects: paths=%d, text=%d, images=%d, shading=%d, forms=%d | vector=%v, raster=%v\n",
+					o.Counts.Paths, o.Counts.Texts, o.Counts.Images, o.Counts.Shadings, o.Counts.Forms,
+					o.HasVectorContent, o.HasRasterContent)
 			}
 
 			cmd.Printf("Permissions:\n")
