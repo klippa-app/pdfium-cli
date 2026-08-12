@@ -26,6 +26,7 @@ var (
 	progressive       bool
 	renderAnnotations bool
 	renderForm        bool
+	grayscale         bool
 )
 
 func init() {
@@ -43,6 +44,7 @@ func init() {
 	renderCmd.Flags().BoolVarP(&progressive, "progressive", "", false, "Create progressive images, only used for jpeg.")
 	renderCmd.Flags().BoolVarP(&renderAnnotations, "render-annotations", "", false, "Render annotations that are embedded in the PDF.")
 	renderCmd.Flags().BoolVarP(&renderForm, "render-form", "", false, "Render form fields that are embedded in the PDF.")
+	renderCmd.Flags().BoolVarP(&grayscale, "grayscale", "", false, "Render the image in grayscale.")
 
 	rootCmd.AddCommand(renderCmd)
 }
@@ -131,6 +133,11 @@ var renderCmd = &cobra.Command{
 			renderFlags = enums.FPDF_RENDER_FLAG_ANNOT
 		}
 
+		imageFormat := requests.RenderImageFormatRGBA
+		if grayscale {
+			imageFormat = requests.RenderImageFormatGrayscale
+		}
+
 		if combinePages {
 			renderRequest := &requests.RenderToFile{
 				OutputFormat:  outputFormat,
@@ -155,6 +162,7 @@ var renderCmd = &cobra.Command{
 						Height:      maxHeight,
 						RenderFlags: renderFlags,
 						RenderForm:  renderForm,
+						ImageFormat: imageFormat,
 					})
 				}
 				renderRequest.RenderPagesInPixels = &requests.RenderPagesInPixels{
@@ -169,6 +177,7 @@ var renderCmd = &cobra.Command{
 						DPI:         dpi,
 						RenderFlags: renderFlags,
 						RenderForm:  renderForm,
+						ImageFormat: imageFormat,
 					})
 				}
 				renderRequest.RenderPagesInDPI = &requests.RenderPagesInDPI{
@@ -220,6 +229,7 @@ var renderCmd = &cobra.Command{
 								Height:      maxHeight,
 								RenderFlags: renderFlags,
 								RenderForm:  renderForm,
+								ImageFormat: imageFormat,
 							},
 						},
 						Padding: padding,
@@ -232,6 +242,7 @@ var renderCmd = &cobra.Command{
 								DPI:         dpi,
 								RenderFlags: renderFlags,
 								RenderForm:  renderForm,
+								ImageFormat: imageFormat,
 							},
 						},
 						Padding: padding,
