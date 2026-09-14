@@ -29,6 +29,7 @@ var (
 	cropPixels        string
 	cropPoints        string
 	cropRelative      string
+	grayscale         bool
 )
 
 func init() {
@@ -49,6 +50,7 @@ func init() {
 	renderCmd.Flags().StringVarP(&cropPixels, "crop-px", "", "", "Render only a region of the page instead of the whole page, given as \"x,y,width,height\" in pixels of the full page as it would be rendered in the given dpi, for example --crop-px \"1000,500,800,600\". The origin is the top-left corner of the page. Can only be used when rendering a single page, use the pages option to select the page.")
 	renderCmd.Flags().StringVarP(&cropPoints, "crop-points", "", "", "The same as crop-px, but in points, where one point is 1/72 inch. This is the unit that the info command reports page sizes in, for example --crop-points \"36,36,144,72\".")
 	renderCmd.Flags().StringVarP(&cropRelative, "crop-relative", "", "", "The same as crop-px, but as a fraction of the page size, where 1 is the full width or height of the page, for example --crop-relative \"0.25,0.1,0.5,0.2\".")
+	renderCmd.Flags().BoolVarP(&grayscale, "grayscale", "", false, "Render the image in grayscale.")
 
 	rootCmd.AddCommand(renderCmd)
 }
@@ -212,6 +214,11 @@ var renderCmd = &cobra.Command{
 			}
 		}
 
+		imageFormat := requests.RenderImageFormatRGBA
+		if grayscale {
+			imageFormat = requests.RenderImageFormatGrayscale
+		}
+
 		if combinePages {
 			renderRequest := &requests.RenderToFile{
 				OutputFormat:  outputFormat,
@@ -236,6 +243,7 @@ var renderCmd = &cobra.Command{
 						Height:      maxHeight,
 						RenderFlags: renderFlags,
 						RenderForm:  renderForm,
+						ImageFormat: imageFormat,
 					})
 				}
 				renderRequest.RenderPagesInPixels = &requests.RenderPagesInPixels{
@@ -250,6 +258,7 @@ var renderCmd = &cobra.Command{
 						DPI:         dpi,
 						RenderFlags: renderFlags,
 						RenderForm:  renderForm,
+						ImageFormat: imageFormat,
 					})
 				}
 				renderRequest.RenderPagesInDPI = &requests.RenderPagesInDPI{
@@ -302,6 +311,7 @@ var renderCmd = &cobra.Command{
 								RenderFlags: renderFlags,
 								RenderForm:  renderForm,
 								Crop:        renderCrop,
+								ImageFormat: imageFormat,
 							},
 						},
 						Padding: padding,
@@ -315,6 +325,7 @@ var renderCmd = &cobra.Command{
 								RenderFlags: renderFlags,
 								RenderForm:  renderForm,
 								Crop:        renderCrop,
+								ImageFormat: imageFormat,
 							},
 						},
 						Padding: padding,
