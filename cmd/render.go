@@ -30,6 +30,7 @@ var (
 	cropPoints        string
 	cropRelative      string
 	grayscale         bool
+	pngCompression    string
 )
 
 func init() {
@@ -51,6 +52,7 @@ func init() {
 	renderCmd.Flags().StringVarP(&cropPoints, "crop-points", "", "", "The same as crop-px, but in points, where one point is 1/72 inch. This is the unit that the info command reports page sizes in, for example --crop-points \"36,36,144,72\".")
 	renderCmd.Flags().StringVarP(&cropRelative, "crop-relative", "", "", "The same as crop-px, but as a fraction of the page size, where 1 is the full width or height of the page, for example --crop-relative \"0.25,0.1,0.5,0.2\".")
 	renderCmd.Flags().BoolVarP(&grayscale, "grayscale", "", false, "Render the image in grayscale.")
+	renderCmd.Flags().StringVarP(&pngCompression, "png-compression", "", "default", "The compression level to use, only used for png: "+strings.Join(pdf.PNGCompressionLevels, ", ")+". PNG compression is lossless, so this only trades render speed for file size, it does not change the image itself. The level best gives the smallest files, the level speed gives the fastest renders.")
 
 	rootCmd.AddCommand(renderCmd)
 }
@@ -58,7 +60,7 @@ func init() {
 var renderCmd = &cobra.Command{
 	Use:   "render [input] [output]",
 	Short: "Render a PDF into images",
-	Long:  "Render a PDF into images.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout.  or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it. The output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. render invoice.pdf invoice-%d.jpg, the result for a 2-page PDF will be invoice-1.jpg and invoice-2.jpg.\nUse one of the crop options to render only a region of a page instead of the whole page, e.g. render blueprint.pdf detail.jpg --pages 2 --crop-points \"36,36,144,72\" renders a region of 144 by 72 points, 36 points from the left and the top of page 2. The region is rendered directly in the requested resolution, it is not cut out of a render of the full page. The dpi, max-width and max-height options apply to the region instead of to the full page, so --crop-px \"1000,500,800,600\" --max-width 1600 gives an image of 1600 pixels wide of that region. A region may run past the edges of the page, the part that falls outside of the page gets the background color, which makes it possible to cut a page into equally sized tiles.",
+	Long:  "Render a PDF into images.\n[input] can either be a file path or - for stdin.\n[output] can either be a file path or - for stdout.  or - for stdout. In the case of stdout, multiple files will be delimited by the value of the std-file-delimiter, with a newline before and after it. The output filename should contain a \"%d\" placeholder for the page number when rendering more than one page and when not using the combine-pages option, e.g. render invoice.pdf invoice-%d.jpg, the result for a 2-page PDF will be invoice-1.jpg and invoice-2.jpg.\nUse one of the crop options to render only a region of a page instead of the whole page, e.g. render blueprint.pdf detail.jpg --pages 2 --crop-points \"36,36,144,72\" renders a region of 144 by 72 points, 36 points from the left and the top of page 2. The region is rendered directly in the requested resolution, it is not cut out of a render of the full page. The dpi, max-width and max-height options apply to the region instead of to the full page, so --crop-px \"1000,500,800,600\" --max-width 1600 gives an image of 1600 pixels wide of that region. A region may run past the edges of the page, the part that falls outside of the page gets the background color, which makes it possible to cut a page into equally sized tiles.\nPNG files are written with the default compression level of the Go PNG encoder, use --png-compression best for considerably smaller files at the cost of a slower render.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.ExactArgs(2)(cmd, args); err != nil {
 			return newExitCodeError(err, ExitCodeInvalidArguments)
@@ -113,7 +115,13 @@ var renderCmd = &cobra.Command{
 			return
 		}
 
-		err := pdf.LoadPdfium()
+		pngCompressionLevel, err := pdf.ParsePNGCompression(pngCompression)
+		if err != nil {
+			handleError(cmd, fmt.Errorf("invalid png-compression '%s': %w\n", pngCompression, err), ExitCodeInvalidArguments)
+			return
+		}
+
+		err = pdf.LoadPdfium()
 		if err != nil {
 			handleError(cmd, fmt.Errorf("could not load pdfium: %w\n", newPdfiumError(err)), ExitCodePdfiumError)
 			return
@@ -221,10 +229,11 @@ var renderCmd = &cobra.Command{
 
 		if combinePages {
 			renderRequest := &requests.RenderToFile{
-				OutputFormat:  outputFormat,
-				MaxFileSize:   maxFileSize,
-				OutputQuality: quality,
-				Progressive:   progressive,
+				OutputFormat:        outputFormat,
+				MaxFileSize:         maxFileSize,
+				OutputQuality:       quality,
+				Progressive:         progressive,
+				PNGCompressionLevel: pngCompressionLevel,
 			}
 
 			if args[1] == stdFilename {
@@ -288,10 +297,11 @@ var renderCmd = &cobra.Command{
 				newFilePath := strings.Replace(args[1], "%d", page, -1)
 
 				renderRequest := &requests.RenderToFile{
-					OutputFormat:  outputFormat,
-					MaxFileSize:   maxFileSize,
-					OutputQuality: quality,
-					Progressive:   progressive,
+					OutputFormat:        outputFormat,
+					MaxFileSize:         maxFileSize,
+					OutputQuality:       quality,
+					Progressive:         progressive,
+					PNGCompressionLevel: pngCompressionLevel,
 				}
 
 				if args[1] == stdFilename {
