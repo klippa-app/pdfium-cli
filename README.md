@@ -16,7 +16,7 @@
 * Get information of a PDF
 * Merge multiple PDFs into a single PDF
 * Exploding PDFs into one PDF file per page
-* Rendering PDFs in JPG and PNG
+* Rendering PDFs in JPG and PNG, either whole pages or a region of a page
 * Extracting text from PDFs
 * Extracting images from PDFs
 * Extracting attachments from PDFs
