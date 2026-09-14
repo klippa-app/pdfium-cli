@@ -11,8 +11,8 @@ on:
       - development
 
 env:
-  GO_VERSION: "1.24"
-  PDFIUM_VERSION: "7961"
+  GO_VERSION: "1.27.1"
+  PDFIUM_VERSION: "8044"
 
 jobs:
   test-webassembly:
