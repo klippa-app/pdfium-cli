@@ -16,11 +16,13 @@ import (
 )
 
 var withObjects bool
+var skipObjectRecursion bool
 
 func init() {
 	addGenericPDFOptions(infoCmd)
 	infoCmd.Flags().StringVarP(&outputType, "output-type", "", "text", "The file type to output, text or json")
-	infoCmd.Flags().BoolVarP(&withObjects, "with-objects", "", false, "Count page objects by type (path, text, image, shading, form). Descends into form XObjects recursively.")
+	infoCmd.Flags().BoolVarP(&withObjects, "with-objects", "", false, "Count page objects by type (path, text, image, shading, form). Descends into objects that contain other objects unless --skip-object-recursion is given.")
+	infoCmd.Flags().BoolVarP(&skipObjectRecursion, "skip-object-recursion", "", false, "Only count the objects of the page itself, do not descend into objects that contain other objects (currently form XObjects). Lowers memory usage and run time on pages with many nested objects. Only has effect together with --with-objects.")
 	rootCmd.AddCommand(infoCmd)
 }
 
@@ -162,7 +164,8 @@ var infoCmd = &cobra.Command{
 
 		pdfInfo.PageCount = pageCount.PageCount
 
-		// walkObject counts a single page object and recurses into form XObjects.
+		// walkObject counts a single page object and, unless that is turned off
+		// with --skip-object-recursion, recurses into the objects it contains.
 		var walkObject func(*pdfObjectCounts, references.FPDF_PAGEOBJECT) error
 		walkObject = func(counts *pdfObjectCounts, obj references.FPDF_PAGEOBJECT) error {
 			objType, err := pdf.PdfiumInstance.FPDFPageObj_GetType(&requests.FPDFPageObj_GetType{
@@ -182,6 +185,9 @@ var infoCmd = &cobra.Command{
 				counts.Shadings++
 			case enums.FPDF_PAGEOBJ_FORM:
 				counts.Forms++
+				if skipObjectRecursion {
+					break
+				}
 				formObjCount, err := pdf.PdfiumInstance.FPDFFormObj_CountObjects(&requests.FPDFFormObj_CountObjects{
 					PageObject: obj,
 				})
@@ -207,13 +213,19 @@ var infoCmd = &cobra.Command{
 		}
 
 		for i := 0; i < pageCount.PageCount; i++ {
+			loadedPage, err := pdf.PdfiumInstance.FPDF_LoadPage(&requests.FPDF_LoadPage{
+				Document: document.Document,
+				Index:    i,
+			})
+			if err != nil {
+				handleError(cmd, fmt.Errorf("could not load page %d for PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
+				return
+			}
+
+			pageRef := requests.Page{ByReference: &loadedPage.Page}
+
 			pageSize, err := pdf.PdfiumInstance.GetPageSize(&requests.GetPageSize{
-				Page: requests.Page{
-					ByIndex: &requests.PageByIndex{
-						Document: document.Document,
-						Index:    i,
-					},
-				},
+				Page: pageRef,
 			})
 			if err != nil {
 				handleError(cmd, fmt.Errorf("could not get page size for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
@@ -221,12 +233,7 @@ var infoCmd = &cobra.Command{
 			}
 
 			rotation, err := pdf.PdfiumInstance.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{
-				Page: requests.Page{
-					ByIndex: &requests.PageByIndex{
-						Document: document.Document,
-						Index:    i,
-					},
-				},
+				Page: pageRef,
 			})
 			if err != nil {
 				handleError(cmd, fmt.Errorf("could not get page rotation for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
@@ -251,21 +258,11 @@ var infoCmd = &cobra.Command{
 			}
 
 			if withObjects {
-				loadedPage, err := pdf.PdfiumInstance.FPDF_LoadPage(&requests.FPDF_LoadPage{
-					Document: document.Document,
-					Index:    i,
-				})
-				if err != nil {
-					handleError(cmd, fmt.Errorf("could not load page %d for PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
-					return
-				}
-
 				counts := &pdfObjectCounts{}
 				objCount, err := pdf.PdfiumInstance.FPDFPage_CountObjects(&requests.FPDFPage_CountObjects{
-					Page: requests.Page{ByReference: &loadedPage.Page},
+					Page: pageRef,
 				})
 				if err != nil {
-					pdf.PdfiumInstance.FPDF_ClosePage(&requests.FPDF_ClosePage{Page: loadedPage.Page})
 					handleError(cmd, fmt.Errorf("could not count objects for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(err)), ExitCodePdfiumError)
 					return
 				}
@@ -273,7 +270,7 @@ var infoCmd = &cobra.Command{
 				var walkErr error
 				for j := 0; j < objCount.Count && walkErr == nil; j++ {
 					obj, err := pdf.PdfiumInstance.FPDFPage_GetObject(&requests.FPDFPage_GetObject{
-						Page:  requests.Page{ByReference: &loadedPage.Page},
+						Page:  pageRef,
 						Index: j,
 					})
 					if err != nil {
@@ -282,8 +279,6 @@ var infoCmd = &cobra.Command{
 					}
 					walkErr = walkObject(counts, obj.PageObject)
 				}
-
-				pdf.PdfiumInstance.FPDF_ClosePage(&requests.FPDF_ClosePage{Page: loadedPage.Page})
 
 				if walkErr != nil {
 					handleError(cmd, fmt.Errorf("could not walk objects for page %d of PDF %s: %w\n", i+1, args[0], newPdfiumError(walkErr)), ExitCodePdfiumError)
@@ -296,6 +291,8 @@ var infoCmd = &cobra.Command{
 					HasRasterContent: counts.Images > 0,
 				}
 			}
+
+			pdf.PdfiumInstance.FPDF_ClosePage(&requests.FPDF_ClosePage{Page: loadedPage.Page})
 
 			pdfInfo.Pages = append(pdfInfo.Pages, newPage)
 		}
@@ -314,7 +311,7 @@ var infoCmd = &cobra.Command{
 			}
 			pdfInfo.Objects = &pdfPageObjects{
 				Counts:           *total,
-				HasVectorContent: total.Paths > 0 || total.Texts > 0 || total.Shadings > 0,
+				HasVectorContent: total.Paths > 0 || total.Shadings > 0,
 				HasRasterContent: total.Images > 0,
 			}
 		}
