@@ -12,7 +12,7 @@ on:
 
 env:
   GO_VERSION: "1.27.1"
-  PDFIUM_VERSION: "8044"
+  PDFIUM_VERSION: "8057"
 
 jobs:
   test-webassembly:
